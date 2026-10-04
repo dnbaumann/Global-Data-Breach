@@ -1,0 +1,2558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Compute breach-notification deadlines across 208 jurisdictions from incident, confirmation and notification dates, then narrow by country and affected-person counts. Browse and edit the rules.">
+<title>Breach Clock</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%232a4bd3'/%3E%3Cpath d='M16 8v8l5 3' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+img { max-width: 100%; }
+/* Layout concept: an incident-room console. One narrow column of steps, a wide timeline as the centrepiece,
+   deadlines read as a triage list sorted by urgency. Status colour is its own scale, apart from the accent. */
+:root {
+  --bg: #f1f3f7;
+  --surface: #ffffff;
+  --surface-2: #e8ecf3;
+  --ink: #111b2a;
+  --ink-2: #42526a;
+  --ink-3: #66758a;
+  --line: #d2d9e4;
+  --line-2: #e3e8f0;
+  --accent: #2a4bd3;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2e8fb;
+  --st-late: #c0281f;
+  --st-critical: #d2540a;
+  --st-urgent: #b88200;
+  --st-soon: #4d8813;
+  --st-later: #1a7d53;
+  --st-distant: #2872a3;
+  --st-met: #0e7a68;
+  --st-info: #5b6a80;
+  --st-pending: #7867a8;
+  --font-display: "Barlow Semi Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c121b;
+    --surface: #141c28;
+    --surface-2: #1c2635;
+    --ink: #e7edf6;
+    --ink-2: #aab7c9;
+    --ink-3: #8190a5;
+    --line: #2a3647;
+    --line-2: #212c3b;
+    --accent: #859fff;
+    --accent-ink: #0c121b;
+    --accent-soft: #1d2a55;
+    --st-late: #ff7b70;
+    --st-critical: #ff9a55;
+    --st-urgent: #f1c04f;
+    --st-soon: #9bd05a;
+    --st-later: #4cc890;
+    --st-distant: #63b1e1;
+    --st-met: #46cab2;
+    --st-info: #94a4bc;
+    --st-pending: #b5a5e2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c121b;
+  --surface: #141c28;
+  --surface-2: #1c2635;
+  --ink: #e7edf6;
+  --ink-2: #aab7c9;
+  --ink-3: #8190a5;
+  --line: #2a3647;
+  --line-2: #212c3b;
+  --accent: #859fff;
+  --accent-ink: #0c121b;
+  --accent-soft: #1d2a55;
+  --st-late: #ff7b70;
+  --st-critical: #ff9a55;
+  --st-urgent: #f1c04f;
+  --st-soon: #9bd05a;
+  --st-later: #4cc890;
+  --st-distant: #63b1e1;
+  --st-met: #46cab2;
+  --st-info: #94a4bc;
+  --st-pending: #b5a5e2;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+.app { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 56px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+h1 { font-size: 34px; line-height: 1.05; }
+h2 { font-size: 26px; line-height: 1.1; }
+h3 { font-size: 18px; line-height: 1.2; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-3); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* masthead */
+.masthead { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: flex-end; justify-content: space-between; padding-bottom: 16px; }
+.masthead p { color: var(--ink-2); max-width: 56ch; }
+.mast-note { font-size: 12px; color: var(--ink-3); max-width: 44ch; }
+
+.banner { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px dashed var(--accent); background: var(--accent-soft); border-radius: var(--radius); margin-bottom: 16px; }
+.banner strong { font-weight: 600; }
+
+/* steps */
+.steps { margin-bottom: 16px; }
+.steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.step-btn { width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 8px 12px; cursor: pointer; display: grid; gap: 0; min-width: 0; }
+.step-btn .n { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+.step-btn .t { font-family: var(--font-display); font-weight: 600; font-size: 17px; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step-btn[aria-current="step"] { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
+.step-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+.step-btn.done .n::after { content: " \2713"; color: var(--st-met); }
+
+/* panels */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.panel > * { min-width: 0; }
+.panel > header { display: grid; gap: 4px; }
+.panel > header p { color: var(--ink-2); max-width: 70ch; }
+.panel h2:focus { outline: none; }
+.sect { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+.sect > * { min-width: 0; }
+.sect + .sect { padding-top: 18px; border-top: 1px solid var(--line-2); }
+
+/* form controls */
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.field { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.field .lbl { font-weight: 600; }
+.field .hint { font-size: 12px; color: var(--ink-3); }
+input[type="datetime-local"], input[type="number"], input[type="search"], select {
+  width: 100%; min-height: 38px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: 13px;
+}
+input[type="search"] { font-family: var(--font-body); }
+.opts { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: flex-end; }
+.seg { border: 0; padding: 0; margin: 0; display: grid; gap: 4px; }
+.seg legend { padding: 0; font-weight: 600; margin-bottom: 4px; }
+.seg .row { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg label { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.seg span { display: block; padding: 7px 12px; cursor: pointer; background: var(--surface); }
+.seg input:checked + span { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+.seg label + label span { border-left: 1px solid var(--line); }
+
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 8px 14px; cursor: pointer; min-height: 38px; font-weight: 500; }
+.btn:hover { border-color: var(--ink-3); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; filter: none; }
+.btn.small { min-height: 30px; padding: 3px 10px; font-size: 12px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding-top: 4px; }
+
+.msgs { display: grid; gap: 6px; }
+.msg { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); font-size: 13px; }
+.msg.err { border-color: var(--st-late); }
+.msg.warn { border-color: var(--st-urgent); }
+
+.readouts { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.readout { display: grid; gap: 0; }
+.readout .k { font-size: 12px; color: var(--ink-3); }
+.readout .v { font-family: var(--font-mono); font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* chips */
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; line-height: 1.5;
+  --c: var(--st-info); color: color-mix(in srgb, var(--c) 72%, var(--ink)); background: color-mix(in srgb, var(--c) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--c) 45%, var(--surface)); }
+.chip.plain { --c: var(--ink-3); font-weight: 500; }
+.chip.aud { --c: var(--accent); }
+.chip.verify { --c: var(--st-urgent); }
+.chip.hollow { background: transparent; }
+.st-late, .st-missed { --c: var(--st-late); }
+.st-critical { --c: var(--st-critical); }
+.st-urgent { --c: var(--st-urgent); }
+.st-soon { --c: var(--st-soon); }
+.st-later { --c: var(--st-later); }
+.st-distant { --c: var(--st-distant); }
+.st-met { --c: var(--st-met); }
+.st-asap, .st-waiting, .st-info { --c: var(--st-info); }
+.st-pending { --c: var(--st-pending); }
+
+.legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.legend li { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
+.legend i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); display: inline-block; }
+.legend i.hollow { background: transparent; border: 2px solid var(--c); }
+.legend b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); }
+
+/* timeline */
+.tl-wrap { position: relative; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.tl-scroll { overflow-x: auto; }
+.tl-empty { padding: 28px 16px; color: var(--ink-3); text-align: center; }
+.tl svg { display: block; }
+.tl text { fill: var(--ink-2); font-family: var(--font-body); font-size: 11px; }
+.tl .tick-d { fill: var(--ink); font-family: var(--font-mono); font-size: 10.5px; }
+.tl .tick-r { fill: var(--ink-3); font-family: var(--font-mono); font-size: 10px; }
+.tl .lane { fill: var(--ink-3); font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+.tl .ev-label { fill: var(--ink); font-weight: 600; font-size: 11px; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+.tl .axis { stroke: var(--line); stroke-width: 1; }
+.tl .axis-band { fill: var(--surface-2); }
+.tl .tick { stroke: var(--ink-3); stroke-width: 1; }
+.tl .ev { stroke-width: 1.5; stroke-dasharray: 4 3; }
+.tl .ev-incident { stroke: var(--ink-3); }
+.tl .ev-confirm { stroke: var(--accent); }
+.tl .ev-notify { stroke: var(--st-met); }
+.tl .ev-now { stroke: var(--ink); stroke-dasharray: 1 3; stroke-linecap: round; }
+.tl .phase-a { fill: var(--ink-3); opacity: 0.45; }
+.tl .phase-b { fill: var(--accent); opacity: 0.55; }
+.tl .dot { fill: var(--c); stroke: var(--surface); stroke-width: 1.5; }
+.tl .dot.hollow { fill: var(--surface); stroke: var(--c); stroke-width: 2.5; }
+.tl .more { fill: var(--ink); font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.tl .hit { fill: transparent; }
+.tl .stack { cursor: pointer; }
+.tl .stack:hover .hit, .tl .stack:focus-visible .hit { fill: color-mix(in srgb, var(--accent) 12%, transparent); }
+.tl .stack:focus { outline: none; }
+.tl .stack:focus-visible .hit { stroke: var(--accent); stroke-width: 2; }
+.tl-foot { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 8px 12px 10px; border-top: 1px solid var(--line-2); font-size: 12px; color: var(--ink-3); }
+.pop { position: absolute; z-index: 5; width: min(340px, calc(100% - 16px)); max-height: 320px; overflow: auto; background: var(--surface); border: 1px solid var(--ink-3); border-radius: 10px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.22); padding: 10px 12px; display: grid; gap: 8px; }
+.pop h4 { margin: 0; font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.pop ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.pop li { display: grid; gap: 2px; padding-top: 6px; border-top: 1px solid var(--line-2); }
+.pop li .nm { font-weight: 600; }
+.pop .x { justify-self: end; }
+
+.fastest { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; list-style: none; margin: 0; padding: 0; }
+.fastest li { border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 10px; display: grid; gap: 0; background: var(--surface); }
+.fastest .big { font-family: var(--font-mono); font-size: 18px; font-weight: 500; }
+
+/* picker */
+.picker-tools { display: grid; gap: 10px; }
+.quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+.chip-x { cursor: pointer; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.chip-x:hover { border-color: var(--st-late); }
+.region { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.region + .region { margin-top: 8px; }
+.region > summary { list-style: none; cursor: pointer; padding: 10px 14px; display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.region > summary::-webkit-details-marker { display: none; }
+.region > summary .rn { font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+.region > summary .rc { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+.region > summary .rn::before { content: "\25B8"; display: inline-block; width: 1.1em; color: var(--ink-3); transition: transform 0.15s; }
+.region[open] > summary .rn::before { transform: rotate(90deg); }
+.region .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 2px 12px; padding: 4px 10px 12px; border-top: 1px solid var(--line-2); }
+.pick { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; padding: 7px 6px; border-radius: 8px; cursor: pointer; min-width: 0; }
+.pick:hover { background: var(--surface-2); }
+.pick input { width: 17px; height: 17px; margin: 2px 0 0; accent-color: var(--accent); }
+.pick .nm { font-weight: 600; overflow-wrap: anywhere; }
+.pick .iso { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); margin-left: 6px; font-weight: 400; }
+.pick .sm { display: block; font-size: 12px; color: var(--ink-3); overflow-wrap: anywhere; }
+.pick.has-fixed .sm { color: var(--ink-2); }
+.sticky-nav { position: sticky; bottom: env(safe-area-inset-bottom, 0px); background: var(--surface); border-top: 1px solid var(--line); margin-inline: -20px; margin-bottom: -20px; padding: 12px 20px; border-radius: 0 0 var(--radius) var(--radius); }
+
+/* counts */
+.bulk { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.bulk .field { width: 190px; }
+.crows { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.crow { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 8px 16px; padding: 12px 14px; align-items: start; background: var(--surface); }
+.crow + .crow { border-top: 1px solid var(--line-2); }
+.crow .nm { font-weight: 600; }
+.crow .law { font-size: 12px; color: var(--ink-3); }
+.thr { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 6px; }
+.crow .zero { font-size: 12px; color: var(--st-urgent); margin-top: 4px; }
+
+/* results */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+.tile { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; border-top: 3px solid var(--c, var(--st-info)); background: var(--surface); display: grid; gap: 0; }
+.tile .num { font-family: var(--font-mono); font-size: 24px; font-weight: 500; line-height: 1.1; }
+.tile .lab { font-size: 12px; color: var(--ink-2); }
+.tile.zero { opacity: 0.55; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.res-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.res { display: grid; grid-template-columns: 6px minmax(0, 1fr); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.res::before { content: ""; background: var(--c, var(--st-info)); }
+.res.st-pending::before { background: repeating-linear-gradient(135deg, var(--c, var(--st-pending)) 0 4px, transparent 4px 8px); }
+.res-body { padding: 10px 14px; display: grid; gap: 6px; min-width: 0; }
+.res-top { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: flex-start; justify-content: space-between; }
+.res-id { min-width: 0; display: grid; gap: 0; }
+.res-name { font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+.res-name .iso { font-family: var(--font-mono); font-size: 11px; font-weight: 400; color: var(--ink-3); margin-left: 6px; }
+.res-law { font-size: 12px; color: var(--ink-3); overflow-wrap: anywhere; }
+.res-due { text-align: right; display: grid; gap: 2px; justify-items: end; }
+.res-due time { font-family: var(--font-mono); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.res-due .rel { font-size: 12px; color: var(--ink-2); }
+.res-meta { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 13px; }
+.res-meta .auth { color: var(--ink-2); overflow-wrap: anywhere; }
+.res-plan { font-size: 12px; font-weight: 600; }
+.res-plan.misses { color: color-mix(in srgb, var(--st-late) 80%, var(--ink)); }
+.res-plan.meets { color: color-mix(in srgb, var(--st-met) 80%, var(--ink)); }
+details.more > summary { cursor: pointer; font-size: 12px; color: var(--ink-3); width: fit-content; }
+details.more dl { margin: 8px 0 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; font-size: 12.5px; }
+details.more dt { color: var(--ink-3); }
+details.more dd { margin: 0; overflow-wrap: anywhere; }
+.fold { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.fold > summary { cursor: pointer; padding: 10px 14px; font-weight: 600; display: flex; justify-content: space-between; gap: 12px; }
+.fold > .inner { padding: 4px 12px 12px; display: grid; gap: 8px; }
+.none-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.copybox { display: grid; gap: 6px; }
+.copybox textarea { width: 100%; min-height: 120px; font-family: var(--font-mono); font-size: 12px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+
+.notice { font-size: 12.5px; color: var(--ink-2); display: grid; gap: 6px; margin-top: 20px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.notice h3 { font-size: 16px; }
+.notice ul { margin: 0; padding-left: 18px; display: grid; gap: 2px; }
+
+@media (max-width: 760px) {
+  h1 { font-size: 30px; }
+  .grid3 { grid-template-columns: 1fr; }
+  .steps ol { grid-template-columns: repeat(2, 1fr); }
+  .panel { padding: 16px; }
+  .sticky-nav { margin-inline: -16px; margin-bottom: -16px; padding: 10px 16px; }
+  .crow { grid-template-columns: 1fr; }
+  .res-due { text-align: left; justify-items: start; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------------- rules view and editor ---------------- */
+textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-family: var(--font-body); font-size: 13px; line-height: 1.45; resize: vertical; }
+input[type="date"] { width: 100%; min-height: 38px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: 13px; }
+input[type="text"] { width: 100%; min-height: 38px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 13px; }
+select { font-family: var(--font-body); }
+input:disabled, select:disabled, textarea:disabled { opacity: 0.7; cursor: not-allowed; }
+[aria-invalid="true"] { border-color: var(--st-late) !important; }
+.btn.danger { color: color-mix(in srgb, var(--st-late) 80%, var(--ink)); border-color: color-mix(in srgb, var(--st-late) 50%, var(--line)); }
+.btn.danger:hover { border-color: var(--st-late); }
+.err { color: color-mix(in srgb, var(--st-late) 82%, var(--ink)); font-size: 12px; }
+.err:empty { display: none; }
+.grow { flex: 1 1 auto; }
+
+.mast-side { display: grid; gap: 8px; justify-items: end; }
+.mast-side .mast-note { text-align: right; }
+.view-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.view-btn { border: 0; background: var(--surface); color: var(--ink); padding: 8px 16px; cursor: pointer; font-weight: 500; }
+.view-btn + .view-btn { border-left: 1px solid var(--line); }
+.view-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+.store-badge { font-size: 12.5px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); width: fit-content; max-width: 100%; }
+.store-badge.warn { border-color: var(--st-urgent); }
+.rules-tools { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; }
+.rules-tools .field { width: 138px; }
+.rules-tools .field.grow { flex: 1 1 260px; width: auto; }
+.rules-bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+.inline-check { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.inline-check input { width: 16px; height: 16px; accent-color: var(--accent); }
+.flash { padding: 8px 12px; border-radius: 8px; background: color-mix(in srgb, var(--st-met) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--st-met) 45%, var(--surface)); font-weight: 600; width: fit-content; }
+
+.rules-head, .rule-row { display: grid; grid-template-columns: minmax(170px, 1.3fr) 120px minmax(0, 3fr) minmax(120px, 1fr) 64px; gap: 6px 14px; align-items: start; }
+.rules-head { padding: 0 14px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.rules-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.rule-row { padding: 10px 14px; background: var(--surface); }
+.rule-row + .rule-row { border-top: 1px solid var(--line-2); }
+.rule-row:hover { background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
+.rule-empty { padding: 20px; text-align: center; }
+.rc-name { display: grid; gap: 0; min-width: 0; }
+.rc-name .nm { font-weight: 700; overflow-wrap: anywhere; }
+.rc-name .iso { font-family: var(--font-mono); font-size: 11px; font-weight: 400; color: var(--ink-3); margin-left: 6px; }
+.rc-name .sm, .rc-status .sm { font-size: 12px; color: var(--ink-3); overflow-wrap: anywhere; }
+.rc-region { font-size: 12.5px; color: var(--ink-2); }
+.rc-duties { min-width: 0; display: grid; gap: 6px; }
+.rc-duties .chip { white-space: normal; }
+.rc-status { display: grid; gap: 4px; justify-items: start; }
+.rc-act { text-align: right; }
+.rule-detail { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 12.5px; }
+.rule-detail li { padding-left: 10px; border-left: 2px solid var(--line); overflow-wrap: anywhere; }
+
+#backup .field { margin-top: 4px; }
+.file-btn { display: inline-flex; align-items: center; cursor: pointer; position: relative; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.confirm-box { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 12px; border: 1px solid var(--st-late); border-radius: 8px; }
+
+/* drawer */
+body.drawer-open { overflow: hidden; }
+.drawer-backdrop { position: fixed; inset: 0; background: rgb(8 12 20 / 0.5); z-index: 40; }
+.drawer { position: fixed; top: env(safe-area-inset-top, 0px); right: 0; bottom: 0; width: min(640px, 100%); background: var(--surface); color: var(--ink); border-left: 1px solid var(--line); z-index: 41; display: flex; flex-direction: column; box-shadow: -12px 0 40px rgb(0 0 0 / 0.25); }
+.dr-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.dr-head h3 { font-size: 22px; overflow-wrap: anywhere; }
+.eyebrow { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.dr-body { flex: 1 1 auto; overflow-y: auto; padding: 16px 18px; display: grid; gap: 18px; align-content: start; }
+.dr-foot { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--surface); }
+.foot-left { display: inline-flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.confirm-msg { font-weight: 600; }
+.ed-sec { display: grid; gap: 10px; min-width: 0; }
+.ed-sec h4 { margin: 0; font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.ed-sec-head { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.ed-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ed-grid .wide { grid-column: 1 / -1; }
+.field.check { align-content: end; }
+.field.check label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; line-height: 1.35; }
+.field.check input { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+.inline { display: flex; gap: 8px; }
+.inline select { flex: 1 1 auto; min-width: 0; }
+.inline input[type="number"] { width: 90px; flex: none; }
+.obl-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.obl { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; display: grid; gap: 12px; background: color-mix(in srgb, var(--surface-2) 40%, var(--surface)); min-width: 0; }
+.obl-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.obl-head h5 { margin: 0; font-size: 14px; font-weight: 700; }
+.obl-tools { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.obl-prev { font-size: 12.5px; color: var(--ink-2); padding: 6px 10px; border-radius: 6px; background: var(--accent-soft); }
+.obl-prev:empty { display: none; }
+
+@media (max-width: 860px) {
+  .rules-head { display: none; }
+  .rule-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .rc-region { grid-column: 1; }
+  .rc-duties { grid-column: 1 / -1; }
+  .rc-status { grid-column: 1; grid-auto-flow: column; justify-content: start; align-items: center; flex-wrap: wrap; }
+  .rc-act { grid-column: 2; grid-row: 1; }
+  .mast-side { justify-items: start; }
+  .mast-side .mast-note { text-align: left; }
+}
+@media (max-width: 560px) {
+  .ed-grid { grid-template-columns: 1fr; }
+  .rules-tools .field { width: calc(50% - 6px); }
+  .rules-tools .field.grow { width: 100%; }
+  .drawer { width: 100%; border-left: 0; }
+}
+
+</style>
+</head>
+<body>
+<noscript><p style="padding:16px;font-family:system-ui,sans-serif">Breach Clock needs JavaScript to run. Nothing is sent anywhere.</p></noscript>
+<div class="app">
+  <header class="masthead">
+    <div>
+      <h1>Breach Clock</h1>
+      <p>Enter three dates. See the notification deadline in every jurisdiction, then narrow to the ones that apply to you.</p>
+    </div>
+    <div class="mast-side">
+      <div class="view-switch" role="group" aria-label="View">
+        <button class="view-btn" type="button" data-view="calc" aria-pressed="true">Calculator</button>
+        <button class="view-btn" type="button" data-view="rules" aria-pressed="false">Rules</button>
+      </div>
+      <p class="mast-note">A planning aid, not legal advice. Dates are computed from a reference dataset that needs review by counsel before you rely on it.</p>
+    </div>
+  </header>
+
+  <div id="calcView">
+
+  <div id="exampleBanner" class="banner" hidden>
+    <span><strong>Example scenario.</strong> The dates, countries and counts below are made up so you can see how the tool works.</span>
+    <button class="btn small" id="clearExample" type="button">Start with my own incident</button>
+  </div>
+
+  <nav class="steps" aria-label="Steps">
+    <ol>
+      <li><button class="step-btn" type="button" data-step="1"><span class="n">STEP 1</span><span class="t">Dates</span></button></li>
+      <li><button class="step-btn" type="button" data-step="2"><span class="n">STEP 2</span><span class="t">Countries</span></button></li>
+      <li><button class="step-btn" type="button" data-step="3"><span class="n">STEP 3</span><span class="t">People affected</span></button></li>
+      <li><button class="step-btn" type="button" data-step="4"><span class="n">STEP 4</span><span class="t">Deadlines</span></button></li>
+    </ol>
+  </nav>
+
+  <!-- STEP 1 -->
+  <section class="panel" id="step1" aria-labelledby="h-step1">
+    <header>
+      <h2 id="h-step1" tabindex="-1">When did it happen?</h2>
+      <p>Times are read in your browser's time zone (<span class="mono" id="tzName"></span>).</p>
+    </header>
+
+    <div class="sect">
+      <div class="grid3">
+        <label class="field" for="inIncident">
+          <span class="lbl">Incident date</span>
+          <input id="inIncident" type="datetime-local">
+          <span class="hint">When the breach began, or the earliest known unauthorised access.</span>
+        </label>
+        <label class="field" for="inConfirm">
+          <span class="lbl">Confirmation date</span>
+          <input id="inConfirm" type="datetime-local">
+          <span class="hint">When you were reasonably certain personal data was compromised. Most laws start the clock here.</span>
+        </label>
+        <label class="field" for="inNotify">
+          <span class="lbl">Notification date <span class="muted">(optional)</span></span>
+          <input id="inNotify" type="datetime-local">
+          <span class="hint">When you notified, or plan to notify, regulators and individuals. Used to test each deadline and to start follow-on clocks.</span>
+        </label>
+      </div>
+
+      <div class="opts">
+        <fieldset class="seg">
+          <legend>Start the clock at</legend>
+          <div class="row">
+            <label><input type="radio" name="clock" value="confirmation" checked><span>Confirmation</span></label>
+            <label><input type="radio" name="clock" value="incident"><span>Incident (conservative)</span></label>
+          </div>
+        </fieldset>
+        <div class="field" style="width: 230px">
+          <label class="lbl" for="asOfMode">Evaluate as of</label>
+          <select id="asOfMode"><option value="now">Right now</option><option value="custom">A specific time</option></select>
+        </div>
+        <div class="field" id="asOfWrap" style="width: 230px" hidden>
+          <label class="lbl" for="inAsOf">Reference time</label>
+          <input id="inAsOf" type="datetime-local">
+        </div>
+      </div>
+
+      <div class="msgs" id="dateMsgs" aria-live="polite"></div>
+      <div class="readouts" id="readouts"></div>
+      <div class="actions">
+        <button class="btn small" id="btnExample" type="button">Load example scenario</button>
+        <button class="btn small" id="btnClear" type="button">Clear all</button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Every jurisdiction at a glance</h3>
+      <p id="overviewSummary" class="muted"></p>
+      <div class="tl" id="tlAll"></div>
+      <ul class="legend" id="legendAll"></ul>
+      <h3>Shortest clocks</h3>
+      <ul class="fastest" id="fastest"></ul>
+    </div>
+
+    <div class="nav">
+      <span class="muted" id="to2hint"></span>
+      <button class="btn primary" id="to2" type="button">Choose countries</button>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" id="step2" aria-labelledby="h-step2" hidden>
+    <header>
+      <h2 id="h-step2" tabindex="-1">Where do affected people live?</h2>
+      <p>Select every jurisdiction where affected individuals reside or where you operate. United States entries are listed by state because the rules differ.</p>
+    </header>
+    <div class="picker-tools">
+      <div class="field">
+        <label class="lbl" for="q">Search</label>
+        <input id="q" type="search" placeholder="Country, ISO code or law name" autocomplete="off">
+      </div>
+      <div class="quick" id="quick"></div>
+    </div>
+    <div class="chips" id="selChips" aria-label="Selected jurisdictions"></div>
+    <div id="pickList"></div>
+    <div class="nav sticky-nav">
+      <span id="selCount" class="mono"></span>
+      <span class="actions">
+        <button class="btn" id="back1" type="button">Back</button>
+        <button class="btn primary" id="to3" type="button">Enter affected counts</button>
+      </span>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" id="step3" aria-labelledby="h-step3" hidden>
+    <header>
+      <h2 id="h-step3" tabindex="-1">How many people are affected in each?</h2>
+      <p>Volume thresholds decide whether some regulator duties apply. Leave a count blank if you do not know it yet; it is treated as meeting every threshold. Enter 0 to drop a jurisdiction.</p>
+    </header>
+    <div class="bulk">
+      <div class="field">
+        <label class="lbl" for="bulk">Set every count to</label>
+        <input id="bulk" type="number" min="0" step="1" inputmode="numeric" placeholder="e.g. 1000">
+      </div>
+      <button class="btn" id="applyBulk" type="button">Apply to all</button>
+    </div>
+    <div class="crows" id="countRows"></div>
+    <div class="nav">
+      <button class="btn" id="back2" type="button">Back</button>
+      <button class="btn primary" id="to4" type="button">Show deadlines</button>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="panel" id="step4" aria-labelledby="h-step4" hidden>
+    <header>
+      <h2 id="h-step4" tabindex="-1">Your deadlines</h2>
+      <p id="resMeta" class="muted"></p>
+    </header>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="sect">
+      <div class="toolbar">
+        <fieldset class="seg">
+          <legend class="sr">Show</legend>
+          <div class="row">
+            <label><input type="radio" name="aud" value="all" checked><span>All duties</span></label>
+            <label><input type="radio" name="aud" value="reg"><span>Regulators</span></label>
+            <label><input type="radio" name="aud" value="sub"><span>Individuals</span></label>
+          </div>
+        </fieldset>
+        <span class="actions">
+          <button class="btn small" id="btnRefresh" type="button">Recalculate from now</button>
+          <button class="btn small" id="btnCsv" type="button">Copy as CSV</button>
+          <button class="btn small" id="btnText" type="button">Copy as text</button>
+        </span>
+      </div>
+      <div id="copyOut"></div>
+      <div class="tl" id="tlSel"></div>
+      <ul class="legend" id="legendSel"></ul>
+    </div>
+
+    <div class="sect">
+      <h3 id="h-fixed">Fixed deadlines</h3>
+      <ul class="res-list" id="listFixed"></ul>
+    </div>
+    <div class="sect" id="secAsap">
+      <h3>No fixed date: act without undue delay</h3>
+      <p class="muted">These laws set no number of hours or days. The clock still runs from the same starting point.</p>
+      <ul class="res-list" id="listAsap"></ul>
+    </div>
+    <div id="folds" class="sect"></div>
+    <div class="nav">
+      <button class="btn" id="back3" type="button">Back</button>
+      <button class="btn" id="back1b" type="button">Change dates</button>
+    </div>
+  </section>
+
+  </div><!-- /calcView -->
+
+  <section class="panel" id="rulesView" aria-labelledby="h-rules" hidden>
+    <header>
+      <h2 id="h-rules" tabindex="-1">Jurisdiction rules</h2>
+      <p>Every rule the calculator uses. Open one to read or edit it. Changes apply to the calculator straight away, and any rule can be reset to its built-in version.</p>
+      <p id="storeBadge" class="store-badge"></p>
+    </header>
+
+    <div class="rules-tools">
+      <div class="field grow">
+        <label class="lbl" for="rq">Search</label>
+        <input id="rq" type="search" placeholder="Name, code, law, authority or condition" autocomplete="off">
+      </div>
+      <div class="field"><label class="lbl" for="rRegion">Region</label><select id="rRegion"></select></div>
+      <div class="field"><label class="lbl" for="rCov">Duty type</label>
+        <select id="rCov"><option value="">All</option><option value="fixed">Fixed deadline</option><option value="asap">Without undue delay</option><option value="voluntary">Voluntary only</option><option value="none">None identified</option></select></div>
+      <div class="field"><label class="lbl" for="rConf">Source check</label>
+        <select id="rConf"><option value="">All</option><option value="checked">Checked</option><option value="known">Established</option><option value="verify">Verify</option></select></div>
+      <div class="field"><label class="lbl" for="rSort">Sort by</label>
+        <select id="rSort"><option value="name">Name</option><option value="region">Region</option><option value="fastest">Fastest deadline</option><option value="recent">Recently edited</option></select></div>
+    </div>
+    <div class="rules-bar">
+      <label class="inline-check"><input type="checkbox" id="rEdited"> Edited or custom only</label>
+      <label class="inline-check"><input type="checkbox" id="rDetail"> Show full rule text</label>
+      <span class="grow"></span>
+      <button class="btn primary small" id="btnAddRule" type="button">Add a jurisdiction</button>
+    </div>
+    <p id="rulesCount" class="muted" aria-live="polite"></p>
+    <p id="rulesFlash" class="flash" role="status" hidden></p>
+
+    <div class="rules-head" aria-hidden="true"><span>Jurisdiction</span><span>Region</span><span>Duties</span><span>Status</span><span></span></div>
+    <ul class="rules-list" id="rulesList"></ul>
+
+    <details class="fold" id="backup">
+      <summary><span>Back up, share or restore rules</span></summary>
+      <div class="inner">
+        <p class="muted">Export your edits as JSON to keep a copy, send them to a colleague, or hand them back to be built into the source. Import reads the same format.</p>
+        <div class="actions">
+          <button class="btn small" id="btnExportEdited" type="button">Export edited rules</button>
+          <button class="btn small" id="btnExportAll" type="button">Export all rules</button>
+          <button class="btn small" id="btnResetAll" type="button" data-needs-edit>Reset all edits</button>
+        </div>
+        <div id="resetAllBox" class="confirm-box" hidden>
+          <p id="resetAllText" role="alert"></p>
+          <span class="actions"><button class="btn danger small" id="btnResetYes" type="button">Reset</button><button class="btn small" id="btnResetNo" type="button">Keep edits</button></span>
+        </div>
+        <p id="backupMsg" class="muted" aria-live="polite"></p>
+        <div id="backupCopy"></div>
+        <div class="field">
+          <label class="lbl" for="importText">Import rules</label>
+          <textarea id="importText" rows="4" placeholder="Paste exported JSON here, or choose a file"></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn small" id="btnReviewImport" type="button">Review import</button>
+          <label class="btn small file-btn" for="importFile">Choose a file<input id="importFile" type="file" accept=".json,application/json"></label>
+        </div>
+        <div id="importOut"></div>
+      </div>
+    </details>
+  </section>
+
+  <div id="editorWrap" hidden>
+    <div id="editorBackdrop" class="drawer-backdrop"></div>
+    <aside id="editor" class="drawer" role="dialog" aria-modal="true" aria-labelledby="edTitle"></aside>
+  </div>
+
+  <aside class="notice" aria-labelledby="h-notes">
+    <h3 id="h-notes">How to read this</h3>
+    <ul>
+      <li>Not legal advice. Laws change, and many have exceptions, thresholds and sector rules this tool does not model (for example NIS2, DORA, GLBA and bank regulators). Confirm every jurisdiction with counsel.</li>
+      <li>Each entry is tagged <b>Checked</b> (cross-checked against current published sources in October 2026), <b>Established</b> (settled law, not re-checked) or <b>Verify</b> (recent, ambiguous or thinly sourced). Jurisdictions with no entry are shown as having no fixed deadline identified, which is not the same as having no obligation.</li>
+      <li>Business days exclude Saturdays and Sundays only. Local public holidays are not applied. Day counts keep the same clock time as the starting point.</li>
+      <li>The notification date is treated as the date both regulators and individuals are told. If you notify them on different days, check each duty on its own.</li>
+      <li id="noteStore">Incident dates and affected counts never leave this page and are not saved. Only edits to the rules are stored: with the shared rules, in this artifact for everyone who can open it; otherwise in this browser.</li>
+    </ul>
+  </aside>
+</div>
+
+<script>
+const STANDALONE = true;
+/* ------------------------------------------------------------------
+   Jurisdiction dataset. Snapshot: October 2026.
+   timing: "72h" | "30d" | "3bd" (business days, Mon-Fri) | "asap"
+   from:   c = confirmation (default), i = incident, n = notification
+   aud:    reg = regulator, sub = individuals, oth = other party, asm = internal assessment
+   min:    affected-person count at which the duty applies
+   harm:   below `min` the duty can still apply if significant harm is likely
+   eff:    date the duty takes effect (ISO); before it, shown as "not yet in force"
+   vol:    voluntary / guidance only
+   conf:   checked = cross-checked against current published sources while building
+           known   = established law, from general knowledge, not re-checked
+           verify  = recent, ambiguous or thinly sourced; confirm before relying
+------------------------------------------------------------------- */
+const REGIONS = {
+  eu: "EU/EEA & UK",
+  eo: "Europe (other)",
+  na: "North America",
+  la: "Latin America & Caribbean",
+  as: "Asia",
+  oc: "Oceania",
+  me: "Middle East",
+  af: "Africa",
+};
+
+const O = (aud, auth, basis, timing, o = {}) => ({ aud, auth, basis, timing, ...o });
+const J = (id, name, region, law, conf, obl, note) => ({ id, name, region, law, conf, obl, note: note || "" });
+
+const GDPR_REG = "Required unless the breach is unlikely to result in a risk to individuals. If notice is later than 72 hours, give reasons for the delay.";
+const GDPR_SUB = "Required only where the breach is likely to result in a high risk to individuals.";
+const gdpr = (auth, instrument = "GDPR") => [
+  O("reg", auth, instrument + " Art. 33", "72h", { cond: GDPR_REG }),
+  O("sub", "Affected individuals", instrument + " Art. 34", "asap", { cond: GDPR_SUB }),
+];
+
+const BASE_JURISDICTIONS = [
+  /* ---------------- EU/EEA & UK ---------------- */
+  J("AT", "Austria", "eu", "GDPR + Datenschutzgesetz", "known", gdpr("Datenschutzbehörde (DSB)")),
+  J("BE", "Belgium", "eu", "GDPR + Act of 30 July 2018", "known", gdpr("Data Protection Authority (APD/GBA)")),
+  J("BG", "Bulgaria", "eu", "GDPR + Personal Data Protection Act", "known", gdpr("Commission for Personal Data Protection (CPDP)")),
+  J("HR", "Croatia", "eu", "GDPR + Act on GDPR Implementation", "known", gdpr("Personal Data Protection Agency (AZOP)")),
+  J("CY", "Cyprus", "eu", "GDPR + Law 125(I)/2018", "known", gdpr("Commissioner for Personal Data Protection")),
+  J("CZ", "Czechia", "eu", "GDPR + Act No. 110/2019", "known", gdpr("Office for Personal Data Protection (ÚOOÚ)")),
+  J("DK", "Denmark", "eu", "GDPR + Data Protection Act", "known", gdpr("Datatilsynet")),
+  J("EE", "Estonia", "eu", "GDPR + Personal Data Protection Act", "known", gdpr("Data Protection Inspectorate (AKI)")),
+  J("FI", "Finland", "eu", "GDPR + Data Protection Act", "known", gdpr("Office of the Data Protection Ombudsman")),
+  J("FR", "France", "eu", "GDPR + Loi Informatique et Libertés", "known", gdpr("CNIL")),
+  J("DE", "Germany", "eu", "GDPR + BDSG", "known", gdpr("Competent state DPA (BfDI for federal bodies and telecoms)"), "The competent authority depends on where the company is established. Several states have their own DPA."),
+  J("GR", "Greece", "eu", "GDPR + Law 4624/2019", "known", gdpr("Hellenic Data Protection Authority")),
+  J("HU", "Hungary", "eu", "GDPR + Act CXII of 2011", "known", gdpr("NAIH")),
+  J("IE", "Ireland", "eu", "GDPR + Data Protection Act 2018", "known", gdpr("Data Protection Commission (DPC)")),
+  J("IT", "Italy", "eu", "GDPR + Codice Privacy", "known", gdpr("Garante per la protezione dei dati personali")),
+  J("LV", "Latvia", "eu", "GDPR + Personal Data Processing Law", "known", gdpr("Data State Inspectorate (DVI)")),
+  J("LT", "Lithuania", "eu", "GDPR + Law on Legal Protection of Personal Data", "known", gdpr("State Data Protection Inspectorate (VDAI)")),
+  J("LU", "Luxembourg", "eu", "GDPR + Law of 1 Aug 2018", "known", gdpr("CNPD")),
+  J("MT", "Malta", "eu", "GDPR + Data Protection Act", "known", gdpr("Information and Data Protection Commissioner (IDPC)")),
+  J("NL", "Netherlands", "eu", "GDPR + UAVG", "known", gdpr("Autoriteit Persoonsgegevens (AP)")),
+  J("PL", "Poland", "eu", "GDPR + Personal Data Protection Act", "known", gdpr("UODO")),
+  J("PT", "Portugal", "eu", "GDPR + Law 58/2019", "known", gdpr("CNPD")),
+  J("RO", "Romania", "eu", "GDPR + Law 190/2018", "known", gdpr("ANSPDCP")),
+  J("SK", "Slovakia", "eu", "GDPR + Act No. 18/2018", "known", gdpr("Office for Personal Data Protection")),
+  J("SI", "Slovenia", "eu", "GDPR + ZVOP-2", "known", gdpr("Information Commissioner")),
+  J("ES", "Spain", "eu", "GDPR + LOPDGDD", "known", gdpr("AEPD")),
+  J("SE", "Sweden", "eu", "GDPR + Data Protection Act", "known", gdpr("IMY")),
+  J("IS", "Iceland", "eu", "GDPR (EEA) + Act No. 90/2018", "known", gdpr("Persónuvernd")),
+  J("LI", "Liechtenstein", "eu", "GDPR (EEA) + Data Protection Act", "known", gdpr("Data Protection Authority (DSS)")),
+  J("NO", "Norway", "eu", "GDPR (EEA) + Personal Data Act", "known", gdpr("Datatilsynet")),
+  J("GB", "United Kingdom", "eu", "UK GDPR + Data Protection Act 2018", "known", [
+    O("reg", "Information Commissioner's Office (ICO)", "UK GDPR Art. 33", "72h", { cond: GDPR_REG }),
+    O("sub", "Affected individuals", "UK GDPR Art. 34", "asap", { cond: GDPR_SUB }),
+    O("reg", "ICO (communications providers)", "PECR reg. 5A", "24h", { cond: "Public electronic communications service providers only." }),
+  ], "NIS-style incident rules, FCA/PRA reporting and other sector regimes are not modelled."),
+
+  /* ---------------- Europe (other) ---------------- */
+  J("AL", "Albania", "eo", "Personal data protection law (reform reported)", "verify", [
+    O("reg", "Information and Data Protection Commissioner", "Data protection law (GDPR-aligned reform)", "asap", { conf: "verify", cond: "A GDPR-aligned law has been reported; check whether a fixed window such as 72 hours applies." }),
+  ]),
+  J("AD", "Andorra", "eo", "Law 29/2021 on personal data protection", "verify", [
+    O("reg", "Andorran Data Protection Agency (APDA)", "Law 29/2021", "asap", { conf: "verify", cond: "GDPR-modelled law. Check whether a fixed window (commonly 72 hours) applies." }),
+  ]),
+  J("BY", "Belarus", "eo", "Law No. 99-Z on Personal Data Protection", "checked", [
+    O("reg", "National Personal Data Protection Center", "Law 99-Z (2021)", "3bd", { cond: "Immediately, and no later than 3 working days after becoming aware. Not required if the breach caused no unlawful disclosure, alteration, blocking or irreversible deletion." }),
+  ]),
+  J("BA", "Bosnia and Herzegovina", "eo", null, "verify", [], "Data protection law is under reform. Confirm current state and entity-level rules."),
+  J("CH", "Switzerland", "eo", "Federal Act on Data Protection (revised, 2023)", "known", [
+    O("reg", "Federal Data Protection and Information Commissioner (FDPIC)", "FADP Art. 24", "asap", { cond: "As soon as possible, where the breach is likely to result in a high risk to personality or fundamental rights." }),
+    O("sub", "Affected individuals", "FADP Art. 24(4)", "asap", { cond: "Where needed for their protection, or if the FDPIC requires it." }),
+  ]),
+  J("GE", "Georgia", "eo", "Law on Personal Data Protection (2023)", "verify", [
+    O("reg", "Personal Data Protection Service", "Law on Personal Data Protection (2023)", "72h", { conf: "verify" }),
+  ]),
+  J("XK", "Kosovo", "eo", "Law No. 06/L-082 on Personal Data Protection", "verify", [
+    O("reg", "Information and Privacy Agency", "Law 06/L-082", "72h", { conf: "verify" }),
+  ]),
+  J("MD", "Moldova", "eo", "Law No. 175/2024 on personal data protection", "verify", [
+    O("reg", "National Center for Personal Data Protection", "Law 175/2024", "72h", { conf: "verify" }),
+  ]),
+  J("MC", "Monaco", "eo", "Law No. 1.565 on personal data protection", "verify", [
+    O("reg", "Personal Data Protection Authority (APDP)", "Law 1.565", "asap", { conf: "verify", cond: "GDPR-modelled law. Check whether a fixed window (commonly 72 hours) applies." }),
+  ]),
+  J("ME", "Montenegro", "eo", null, "verify", [], "Alignment with the GDPR is in progress. Confirm current law."),
+  J("MK", "North Macedonia", "eo", "Law on Personal Data Protection (2020)", "verify", [
+    O("reg", "Personal Data Protection Agency", "Law on Personal Data Protection (2020)", "72h", { conf: "verify" }),
+  ]),
+  J("RU", "Russia", "eo", "Federal Law No. 152-FZ (Art. 21)", "known", [
+    O("reg", "Roskomnadzor (initial notice)", "152-FZ Art. 21(3.1)(1)", "24h", { cond: "Initial notice of the incident, its causes and harm, and a contact person." }),
+    O("reg", "Roskomnadzor (investigation results)", "152-FZ Art. 21(3.1)(2)", "72h", { cond: "Results of the internal investigation and the persons responsible." }),
+  ], "Applies to breaches affecting the rights of data subjects."),
+  J("SM", "San Marino", "eo", "Law No. 171/2018", "verify", [
+    O("reg", "Data Protection Authority", "Law 171/2018", "asap", { conf: "verify", cond: "GDPR-modelled law. Check whether a fixed window (commonly 72 hours) applies." }),
+  ]),
+  J("RS", "Serbia", "eo", "Law on Personal Data Protection (2018)", "known", [
+    O("reg", "Commissioner for Information of Public Importance and Personal Data Protection", "Law on Personal Data Protection Art. 52", "72h", { cond: "Unless the breach is unlikely to result in a risk to individuals." }),
+    O("sub", "Affected individuals", "Law on Personal Data Protection Art. 53", "asap", { cond: "High risk to rights and freedoms." }),
+  ]),
+  J("TR", "Türkiye", "eo", "KVKK (Law No. 6698)", "known", [
+    O("reg", "Personal Data Protection Board (KVKK)", "KVKK Art. 12; Board Decision 2019/10", "72h"),
+    O("sub", "Affected individuals", "KVKK Art. 12", "asap", { cond: "As soon as possible after the Board is notified." }),
+  ]),
+  J("UA", "Ukraine", "eo", null, "verify", [], "No general breach-notification deadline identified. A GDPR-aligned law has been in draft. Sector rules (banking, telecom) exist."),
+  J("VA", "Vatican City", "eo", null, "verify", []),
+  J("AM", "Armenia", "eo", null, "verify", []),
+  J("AZ", "Azerbaijan", "eo", null, "verify", []),
+
+  /* ---------------- North America ---------------- */
+  J("CA", "Canada", "na", "PIPEDA (federal), plus Quebec Law 25 and Alberta PIPA", "known", [
+    O("reg", "Office of the Privacy Commissioner of Canada", "PIPEDA s. 10.1", "asap", { cond: "As soon as feasible, where the breach creates a real risk of significant harm." }),
+    O("sub", "Affected individuals", "PIPEDA s. 10.1(3)", "asap", { cond: "As soon as feasible, where the breach creates a real risk of significant harm." }),
+  ], "Quebec (promptly, to the CAI and individuals) and Alberta (without unreasonable delay) have their own regimes."),
+  J("MX", "Mexico", "na", "LFPDPPP (2025)", "verify", [
+    O("sub", "Affected individuals", "LFPDPPP (2025) breach provisions", "asap", { conf: "verify", cond: "Immediately, where the breach significantly affects property or moral rights." }),
+    O("reg", "Anticorruption and Good Governance Secretariat", "LFPDPPP (2025)", "asap", { conf: "verify" }),
+  ], "The data protection law was replaced in March 2025 and the regulator was restructured."),
+  J("US-HIPAA", "United States — HIPAA (health data)", "na", "HIPAA Breach Notification Rule, 45 CFR 164.400-414", "known", [
+    O("sub", "Affected individuals", "45 CFR 164.404", "60d", { cond: "Covered entities and business associates. 'Without unreasonable delay' and no later than 60 days after discovery." }),
+    O("reg", "HHS Office for Civil Rights", "45 CFR 164.408", "60d", { min: 500, cond: "500 or more individuals: notify HHS at the same time as individuals. Fewer than 500: log it and report within 60 days after the end of the calendar year." }),
+    O("oth", "Prominent media outlets", "45 CFR 164.406", "60d", { min: 501, cond: "More than 500 residents of one state or jurisdiction." }),
+  ]),
+  J("US-SEC", "United States — SEC (public companies)", "na", "Form 8-K, Item 1.05", "known", [
+    O("reg", "SEC (public disclosure on Form 8-K)", "Form 8-K Item 1.05", "4bd", { cond: "Registrants only. The clock runs from the materiality determination, which must follow discovery without unreasonable delay. If that date differs from your confirmation date, adjust. Federal holidays are not excluded here." }),
+  ], "The Attorney General can authorise a delay for national security or public safety."),
+  J("US-CA", "United States — California", "na", "Cal. Civ. Code §1798.82, as amended by SB 446 (2026)", "checked", [
+    O("sub", "Affected California residents", "Civ. Code §1798.82(a)", "30d", { cond: "30 calendar days from discovery or notification of the breach. Delay is allowed only for law enforcement needs or to determine scope and restore system integrity." }),
+    O("reg", "California Attorney General", "Civ. Code §1798.82(f)", "15d", { from: "n", min: 501, cond: "More than 500 California residents: submit a sample notice within 15 days of notifying individuals." }),
+  ]),
+  J("US-CO", "United States — Colorado", "na", "C.R.S. §6-1-716", "known", [
+    O("sub", "Affected Colorado residents", "C.R.S. §6-1-716(2)", "30d"),
+    O("reg", "Colorado Attorney General", "C.R.S. §6-1-716(2)(f)", "30d", { min: 500, cond: "500 or more Colorado residents." }),
+  ]),
+  J("US-FL", "United States — Florida", "na", "Fla. Stat. §501.171", "known", [
+    O("sub", "Affected Florida residents", "§501.171(4)", "30d", { cond: "A 15-day extension is available for good cause, with notice to the Department of Legal Affairs." }),
+    O("reg", "Florida Department of Legal Affairs", "§501.171(3)", "30d", { min: 500, cond: "500 or more Florida residents." }),
+  ]),
+  J("US-NY", "United States — New York", "na", "N.Y. Gen. Bus. Law §899-aa, as amended Dec. 2024", "checked", [
+    O("sub", "Affected New York residents", "GBL §899-aa(2)", "30d", { cond: "30 days from discovery of the breach." }),
+    O("reg", "NY Attorney General, Department of State, State Police", "GBL §899-aa(8)", "30d", { conf: "verify", cond: "Notice goes to these bodies when residents are notified; DFS-regulated entities must also notify the Department of Financial Services. Shown at the 30-day outer limit, which is the conservative reading." }),
+  ]),
+  J("US-TX", "United States — Texas", "na", "Tex. Bus. & Com. Code §521.053", "known", [
+    O("sub", "Affected Texas residents", "§521.053(b)", "60d", { cond: "Without unreasonable delay and no later than 60 days after determining a breach occurred." }),
+    O("reg", "Texas Attorney General", "§521.053(i)", "30d", { min: 250, cond: "250 or more Texas residents, via the AG's online form." }),
+  ]),
+  J("US-WA", "United States — Washington", "na", "RCW 19.255.010", "known", [
+    O("sub", "Affected Washington residents", "RCW 19.255.010(8)", "30d"),
+    O("reg", "Washington Attorney General", "RCW 19.255.010(7)", "30d", { min: 501, cond: "More than 500 Washington residents." }),
+  ]),
+  J("US-OTHER", "United States — other states & territories", "na", "State breach-notification statutes", "verify", [
+    O("sub", "Affected residents", "State statutes", "asap", { conf: "verify", cond: "Every state, DC and the territories have a statute. Many now set fixed outer limits (commonly 30 to 60 days), and many require Attorney General or regulator notice above a resident threshold. Use a state-specific entry above where one exists, and confirm the rest with counsel." }),
+  ]),
+
+  /* ---------------- Latin America & Caribbean ---------------- */
+  J("AG", "Antigua and Barbuda", "la", null, "verify", []),
+  J("AR", "Argentina", "la", "Law 25.326", "verify", [], "No statutory deadline identified. Regulator guidance and sector rules (central bank, CNV) may apply."),
+  J("BS", "Bahamas", "la", null, "verify", []),
+  J("BB", "Barbados", "la", null, "verify", [], "Data Protection Act 2019 exists. Confirm its breach provisions and commencement."),
+  J("BZ", "Belize", "la", null, "verify", []),
+  J("BO", "Bolivia", "la", null, "verify", []),
+  J("BR", "Brazil", "la", "LGPD Art. 48; ANPD Resolution CD/ANPD No. 15/2024", "checked", [
+    O("reg", "National Data Protection Authority (ANPD)", "ANPD Res. 15/2024", "3bd", { cond: "Incidents that may cause relevant risk or damage to data subjects. Counted in business days from when the controller learns the incident affected personal data. Can be supplemented within 20 working days." }),
+    O("sub", "Affected data subjects", "ANPD Res. 15/2024", "3bd", { cond: "Same 3-business-day period as the notice to ANPD." }),
+  ]),
+  J("CL", "Chile", "la", "Law 21.719 (in force 1 Dec 2026)", "checked", [
+    O("reg", "Personal Data Protection Agency", "Law 21.719", "72h", { eff: "2026-12-01" }),
+    O("sub", "Affected data subjects", "Law 21.719", "asap", { eff: "2026-12-01", cond: "High risk to rights, or breaches involving sensitive, children's or financial data." }),
+  ], "Separate cybersecurity-framework rules (Law 21.663) set very short early-warning windows for essential service operators."),
+  J("CO", "Colombia", "la", "Law 1581 of 2012; SIC guidance", "checked", [
+    O("reg", "Superintendence of Industry and Commerce (SIC)", "Law 1581/2012 Art. 17(n); SIC rules", "15bd", { cond: "Within 15 business days of detecting the incident and it reaching the person or team who handles it." }),
+  ]),
+  J("CR", "Costa Rica", "la", "Law 8968 and its regulation", "verify", [
+    O("sub", "Affected individuals", "Law 8968 regulation", "5bd", { conf: "verify", cond: "Five business days. The regulation reportedly expects initial information within 72 hours, with the rest completed within five business days." }),
+    O("reg", "PRODHAB", "Law 8968 regulation", "asap", { conf: "verify", cond: "No explicit deadline found for the regulator notice." }),
+  ]),
+  J("CU", "Cuba", "la", null, "verify", []),
+  J("DM", "Dominica", "la", null, "verify", []),
+  J("DO", "Dominican Republic", "la", "Law 172-13", "verify", []),
+  J("EC", "Ecuador", "la", "Organic Law on Personal Data Protection (LOPDP), Art. 43", "checked", [
+    O("reg", "Personal Data Protection Authority", "LOPDP Art. 43", "5d", { cond: "As soon as possible and no later than 5 days after becoming aware. Give reasons if later." }),
+    O("sub", "Affected data subjects", "LOPDP Art. 43", "3d", { cond: "Where the breach poses a risk to fundamental rights: within 3 days of becoming aware of the risk." }),
+  ]),
+  J("SV", "El Salvador", "la", null, "verify", []),
+  J("GD", "Grenada", "la", null, "verify", []),
+  J("GT", "Guatemala", "la", null, "verify", []),
+  J("GY", "Guyana", "la", null, "verify", []),
+  J("HT", "Haiti", "la", null, "verify", []),
+  J("HN", "Honduras", "la", null, "verify", []),
+  J("JM", "Jamaica", "la", "Data Protection Act 2020", "checked", [
+    O("reg", "Information Commissioner", "Data Protection Act 2020", "72h", { cond: "From becoming aware that a security breach may affect personal data. Do not wait to assess the extent first." }),
+    O("sub", "Affected data subjects", "Data Protection Act 2020", "72h"),
+  ]),
+  J("NI", "Nicaragua", "la", null, "verify", []),
+  J("PA", "Panama", "la", "Law 81 of 2019; Decree 285/2021", "verify", [
+    O("reg", "Authority for Transparency and Access to Information (ANTAI)", "Law 81/2019", "asap", { conf: "verify", cond: "Notification without delay is reported. Confirm the timing in the executive decree." }),
+  ]),
+  J("PY", "Paraguay", "la", null, "verify", []),
+  J("PE", "Peru", "la", "Law 29733; Regulation D.S. 016-2024-JUS (in force 30 Mar 2025)", "checked", [
+    O("reg", "National Authority for Personal Data Protection (ANPDP)", "D.S. 016-2024-JUS Art. 34", "48h", { cond: "Where the incident involves large volumes of data, many people, sensitive data or evident harm. Runs from becoming aware of or confirming the incident." }),
+  ]),
+  J("PR", "Puerto Rico", "la", "Law 111-2005", "verify", [
+    O("reg", "Department of Consumer Affairs (DACO)", "Law 111-2005", "10d", { conf: "verify", cond: "Within 10 days of detecting the breach." }),
+    O("sub", "Affected citizens", "Law 111-2005", "asap", { conf: "verify" }),
+  ]),
+  J("KN", "Saint Kitts and Nevis", "la", null, "verify", []),
+  J("LC", "Saint Lucia", "la", null, "verify", []),
+  J("VC", "Saint Vincent and the Grenadines", "la", null, "verify", []),
+  J("SR", "Suriname", "la", null, "verify", []),
+  J("TT", "Trinidad and Tobago", "la", "Data Protection Act 2011 (partly in force)", "verify", []),
+  J("UY", "Uruguay", "la", "Law 18.331; Decree 64/020", "checked", [
+    O("reg", "Personal Data Regulatory and Control Unit (URCDP)", "Decree 64/020", "72h", { cond: "Within 72 hours of confirming the breach. Mitigation must start within 24 hours of confirming a security incident." }),
+    O("sub", "Affected data subjects", "Law 19.670 Art. 38", "asap"),
+  ]),
+  J("VE", "Venezuela", "la", null, "verify", []),
+
+  /* ---------------- Asia ---------------- */
+  J("AF", "Afghanistan", "as", null, "verify", []),
+  J("BD", "Bangladesh", "as", null, "verify", [], "A data protection ordinance has been drafted. Confirm status."),
+  J("BT", "Bhutan", "as", null, "verify", []),
+  J("BN", "Brunei", "as", null, "verify", [], "Recent data protection legislation may add breach rules. Confirm."),
+  J("KH", "Cambodia", "as", null, "verify", []),
+  J("CN", "China", "as", "PIPL Art. 57; CAC Incident Reporting Measures (1 Nov 2025)", "checked", [
+    O("reg", "CAC and competent departments", "PIPL Art. 57", "asap", { cond: "Immediately take remedial steps and notify the authorities." }),
+    O("sub", "Affected individuals", "PIPL Art. 57", "asap", { cond: "Not required if measures taken effectively avoid harm, but the authorities can require it." }),
+    O("reg", "CAC (cybersecurity incident report)", "CAC Incident Reporting Measures", "4h", { cond: "Cybersecurity incidents at the 'relatively major' level or above. One hour for critical information infrastructure operators, and tighter windows for higher severity. This is separate from the PIPL duty and is not triggered by every personal-data breach." }),
+  ]),
+  J("HK", "Hong Kong SAR", "as", "Personal Data (Privacy) Ordinance", "known", [
+    O("reg", "Privacy Commissioner (PCPD)", "PCPD guidance on data breach handling", "asap", { vol: true, cond: "Notification is voluntary under current law. PCPD guidance recommends notifying as soon as practicable." }),
+    O("sub", "Affected individuals", "PCPD guidance", "asap", { vol: true }),
+  ]),
+  J("IN", "India", "as", "CERT-In Directions (2022); DPDP Act 2023 and Rules 2025", "known", [
+    O("reg", "CERT-In", "IT Act s.70B; CERT-In Directions 2022", "6h", { cond: "Cyber incidents of the listed types, including data breaches and data leaks. From noticing the incident." }),
+    O("reg", "Data Protection Board of India", "DPDP Rules 2025, Rule 7", "72h", { eff: "2027-05-13", conf: "checked", cond: "Initial intimation without delay, then a detailed report within 72 hours. Breach provisions take effect about 18 months after the November 2025 notification." }),
+    O("sub", "Affected Data Principals", "DPDP Act s.8(6); Rule 7", "asap", { eff: "2027-05-13", conf: "checked", cond: "Without delay, with no minimum threshold." }),
+  ]),
+  J("ID", "Indonesia", "as", "PDP Law (Law 27/2022), Art. 46", "known", [
+    O("sub", "Affected data subjects", "PDP Law Art. 46", "72h", { cond: "Written notice within 3 x 24 hours." }),
+    O("reg", "Personal data protection agency", "PDP Law Art. 46", "72h", { cond: "Written notice within 3 x 24 hours." }),
+  ]),
+  J("JP", "Japan", "as", "APPI Art. 26; PPC Enforcement Rules", "checked", [
+    O("reg", "Personal Information Protection Commission (preliminary)", "APPI Art. 26; PPC Rules Art. 8", "5d", { cond: "Reportable breaches involve sensitive data, risk of financial loss, wrongful acts, or more than 1,000 people. The statute says 'promptly'; PPC guidance treats 3 to 5 days as the window. Shown at 5 days." }),
+    O("reg", "Personal Information Protection Commission (final)", "APPI Art. 26", "30d", { cond: "60 days if the breach was likely caused by wrongful acts such as a cyberattack." }),
+    O("sub", "Affected individuals", "APPI Art. 26(2)", "asap", { cond: "Promptly, in the same reportable cases." }),
+  ]),
+  J("KZ", "Kazakhstan", "as", null, "verify", []),
+  J("KP", "North Korea", "as", null, "verify", []),
+  J("KR", "South Korea", "as", "PIPA Art. 34; Enforcement Decree Art. 39-40", "known", [
+    O("sub", "Affected data subjects", "PIPA Art. 34(1); Decree Art. 39", "72h", { cond: "Without delay and in any case within 72 hours of becoming aware." }),
+    O("reg", "PIPC or KISA", "PIPA Art. 34(3); Decree Art. 39-40", "72h", { min: 1000, harm: true, cond: "1,000 or more data subjects, or sensitive or unique-identifier data, or intrusion by an outside party." }),
+  ]),
+  J("KG", "Kyrgyzstan", "as", null, "verify", []),
+  J("LA", "Laos", "as", null, "verify", []),
+  J("MY", "Malaysia", "as", "PDPA 2010 as amended 2024; Data Breach Notification Guideline (1 Jun 2025)", "checked", [
+    O("reg", "Personal Data Protection Commissioner", "PDPA s.12B; Guideline", "72h", { min: 1001, harm: true, cond: "Breaches causing or likely to cause significant harm, or affecting more than 1,000 people. If late, submit written reasons with evidence." }),
+    O("sub", "Affected data subjects", "PDPA s.12B(2)", "7d", { from: "n", cond: "Where significant harm is likely: within 7 days after notifying the Commissioner." }),
+  ]),
+  J("MV", "Maldives", "as", null, "verify", []),
+  J("MN", "Mongolia", "as", null, "verify", []),
+  J("MM", "Myanmar", "as", null, "verify", []),
+  J("NP", "Nepal", "as", null, "verify", []),
+  J("PK", "Pakistan", "as", null, "verify", [], "A personal data protection bill has been pending. Sector regulators (SBP, PTA) have their own rules."),
+  J("PH", "Philippines", "as", "Data Privacy Act s.20(f); NPC Circular 16-03", "known", [
+    O("reg", "National Privacy Commission", "NPC Circular 16-03", "72h", { cond: "Sensitive personal information or data enabling identity fraud, with a real risk of serious harm." }),
+    O("sub", "Affected data subjects", "NPC Circular 16-03", "72h", { cond: "Same criteria as the notice to the Commission." }),
+  ]),
+  J("SG", "Singapore", "as", "PDPA Part 6A (ss. 26A-26E)", "known", [
+    O("asm", "Internal breach assessment", "PDPA s.26C", "30d", { cond: "Assess in a reasonable and expeditious manner. Guidance treats 30 days as the benchmark." }),
+    O("reg", "Personal Data Protection Commission", "PDPA s.26D(1)", "3d", { min: 500, harm: true, cond: "Significant harm to individuals, or significant scale (500 or more). The 3 calendar days run from assessing the breach as notifiable. Set the confirmation date to that assessment date." }),
+    O("sub", "Affected individuals", "PDPA s.26D(2)", "asap", { cond: "Where significant harm is likely, on or after notifying the PDPC." }),
+  ]),
+  J("LK", "Sri Lanka", "as", "Personal Data Protection Act No. 9 of 2022", "verify", [
+    O("reg", "Data Protection Authority", "PDPA s.23", "asap", { conf: "verify", cond: "Without undue delay. Guidance has been reported to expect 72 hours." }),
+  ]),
+  J("TW", "Taiwan", "as", "Personal Data Protection Act Art. 12", "verify", [
+    O("sub", "Affected individuals", "PDPA Art. 12", "asap", { conf: "verify", cond: "After the facts are clear. Sector regulators (for example financial) impose shorter windows." }),
+  ]),
+  J("TJ", "Tajikistan", "as", null, "verify", []),
+  J("TH", "Thailand", "as", "PDPA B.E. 2562, s.37(4)", "known", [
+    O("reg", "Personal Data Protection Committee Office", "PDPA s.37(4)", "72h", { cond: "Unless the breach is unlikely to risk individuals' rights and freedoms." }),
+    O("sub", "Affected data subjects", "PDPA s.37(4)", "asap", { cond: "Where the breach is likely to be high risk." }),
+  ]),
+  J("TL", "Timor-Leste", "as", null, "verify", []),
+  J("TM", "Turkmenistan", "as", null, "verify", []),
+  J("UZ", "Uzbekistan", "as", null, "verify", []),
+  J("VN", "Vietnam", "as", "PDP Law 91/2025/QH15; Decree 356/2025", "checked", [
+    O("reg", "Department of Cybersecurity and High-Tech Crime Prevention (MPS)", "PDP Law 2025; Decree 356/2025", "72h", { cond: "Violations that may harm national security, public order, or individuals' rights or property. Reported as 24 hours where an attack on an information system puts consumer data at risk." }),
+    O("sub", "Affected data subjects", "PDP Law 2025; Decree 356/2025", "asap", { conf: "verify", cond: "Reported as 72 hours for sensitive data in finance and banking. Confirm scope in the decree." }),
+  ]),
+  J("MO", "Macau SAR", "as", null, "verify", []),
+
+  /* ---------------- Oceania ---------------- */
+  J("AU", "Australia", "oc", "Privacy Act 1988, Part IIIC (Notifiable Data Breaches)", "known", [
+    O("asm", "Internal breach assessment", "Privacy Act s.26WH", "30d", { cond: "Complete the assessment within 30 days of suspecting an eligible data breach." }),
+    O("reg", "Office of the Australian Information Commissioner (OAIC)", "Privacy Act s.26WK", "asap", { cond: "As soon as practicable after forming the view that an eligible data breach (serious harm likely) has occurred." }),
+    O("sub", "Affected individuals", "Privacy Act s.26WL", "asap", { cond: "As soon as practicable after the statement to the OAIC is prepared." }),
+  ]),
+  J("FJ", "Fiji", "oc", null, "verify", []),
+  J("KI", "Kiribati", "oc", null, "verify", []),
+  J("MH", "Marshall Islands", "oc", null, "verify", []),
+  J("FM", "Micronesia", "oc", null, "verify", []),
+  J("NR", "Nauru", "oc", null, "verify", []),
+  J("NZ", "New Zealand", "oc", "Privacy Act 2020, Part 6", "known", [
+    O("reg", "Office of the Privacy Commissioner", "Privacy Act 2020 s.114", "asap", { cond: "As soon as practicable after becoming aware of a notifiable breach (serious harm likely). OPC guidance says within 72 hours." }),
+    O("sub", "Affected individuals", "Privacy Act 2020 s.115", "asap", { cond: "As soon as practicable, at the same time as the notice to the Commissioner where possible." }),
+  ]),
+  J("PW", "Palau", "oc", null, "verify", []),
+  J("PG", "Papua New Guinea", "oc", null, "verify", []),
+  J("WS", "Samoa", "oc", null, "verify", []),
+  J("SB", "Solomon Islands", "oc", null, "verify", []),
+  J("TO", "Tonga", "oc", null, "verify", []),
+  J("TV", "Tuvalu", "oc", null, "verify", []),
+  J("VU", "Vanuatu", "oc", null, "verify", []),
+
+  /* ---------------- Middle East ---------------- */
+  J("BH", "Bahrain", "me", "Law No. 30 of 2018", "verify", []),
+  J("IR", "Iran", "me", null, "verify", []),
+  J("IQ", "Iraq", "me", null, "verify", []),
+  J("IL", "Israel", "me", "Privacy Protection Regulations (Data Security) 2017; Amendment 13 (2025)", "known", [
+    O("reg", "Privacy Protection Authority", "Data Security Regulations 2017, reg. 11", "asap", { cond: "Immediately on becoming aware of a severe security incident at a database of a defined size or sensitivity." }),
+    O("sub", "Affected individuals", "Data Security Regulations 2017", "asap", { cond: "If the Authority instructs." }),
+  ]),
+  J("JO", "Jordan", "me", "Personal Data Protection Law No. 24 of 2023", "verify", [], "Law in force since 2024. Confirm its breach-notification provisions and any implementing instructions."),
+  J("KW", "Kuwait", "me", "CITRA Data Privacy Protection Regulation", "verify", [
+    O("reg", "Communication and IT Regulatory Authority (CITRA)", "CITRA Data Privacy Protection Regulation", "72h", { conf: "verify" }),
+  ]),
+  J("LB", "Lebanon", "me", null, "verify", []),
+  J("OM", "Oman", "me", "Royal Decree 6/2022 (PDPL) and executive regulations", "verify", [
+    O("reg", "Ministry of Transport, Communications and IT", "PDPL Royal Decree 6/2022", "asap", { conf: "verify", cond: "Executive regulations may set a fixed window. Confirm." }),
+  ]),
+  J("PS", "Palestine", "me", null, "verify", []),
+  J("QA", "Qatar", "me", "Law No. 13 of 2016", "verify", [
+    O("reg", "National Cyber Governance and Assurance Affairs", "Law 13/2016", "asap", { conf: "verify", cond: "Notification as soon as possible is required. Confirm any fixed window." }),
+  ]),
+  J("SA", "Saudi Arabia", "me", "PDPL and Implementing Regulations (2024)", "checked", [
+    O("reg", "SDAIA", "PDPL Art. 20; Implementing Regulations", "72h", { cond: "Breaches that may harm the data or the data subject, or conflict with their rights or interests." }),
+    O("sub", "Affected data subjects", "PDPL Art. 20", "asap", { cond: "Without undue delay where harm is likely." }),
+  ]),
+  J("SY", "Syria", "me", null, "verify", []),
+  J("AE", "United Arab Emirates", "me", "Federal Decree-Law No. 45 of 2021", "verify", [
+    O("reg", "UAE Data Office", "Federal PDPL Art. 9", "asap", { conf: "verify", cond: "Immediately, for breaches that would prejudice privacy or confidentiality. Executive regulations are pending." }),
+    O("sub", "Affected data subjects", "Federal PDPL Art. 9", "asap", { conf: "verify" }),
+  ], "Free zones (DIFC, ADGM) have their own regimes."),
+  J("YE", "Yemen", "me", null, "verify", []),
+
+  /* ---------------- Africa ---------------- */
+  J("DZ", "Algeria", "af", "Law 18-07", "verify", []),
+  J("AO", "Angola", "af", null, "verify", []),
+  J("BJ", "Benin", "af", null, "verify", []),
+  J("BW", "Botswana", "af", null, "verify", [], "A new Data Protection Act is reported. Confirm commencement and breach provisions."),
+  J("BF", "Burkina Faso", "af", null, "verify", []),
+  J("BI", "Burundi", "af", null, "verify", []),
+  J("CV", "Cabo Verde", "af", null, "verify", []),
+  J("CM", "Cameroon", "af", null, "verify", []),
+  J("CF", "Central African Republic", "af", null, "verify", []),
+  J("TD", "Chad", "af", null, "verify", []),
+  J("KM", "Comoros", "af", null, "verify", []),
+  J("CD", "DR Congo", "af", null, "verify", []),
+  J("CG", "Republic of the Congo", "af", null, "verify", []),
+  J("CI", "Côte d'Ivoire", "af", null, "verify", []),
+  J("DJ", "Djibouti", "af", null, "verify", []),
+  J("EG", "Egypt", "af", "Law 151 of 2020; Executive Regulations (Nov 2025)", "checked", [
+    O("reg", "Personal Data Protection Center (PDPC)", "Law 151/2020 Art. 7", "72h", { cond: "Immediately where the breach relates to national security." }),
+    O("sub", "Affected individuals", "Law 151/2020 Art. 7", "3bd", { from: "n", cond: "Within three working days of notifying the PDPC." }),
+  ]),
+  J("GQ", "Equatorial Guinea", "af", null, "verify", []),
+  J("ER", "Eritrea", "af", null, "verify", []),
+  J("SZ", "Eswatini", "af", null, "verify", []),
+  J("ET", "Ethiopia", "af", "Personal Data Protection Proclamation No. 1321/2024", "verify", [
+    O("reg", "Data protection authority", "Proclamation 1321/2024", "asap", { conf: "verify", cond: "Notification duty reported. Confirm the fixed window." }),
+  ]),
+  J("GA", "Gabon", "af", null, "verify", []),
+  J("GM", "Gambia", "af", null, "verify", []),
+  J("GH", "Ghana", "af", "Data Protection Act 2012, s.31", "known", [
+    O("reg", "Data Protection Commission", "DPA 2012 s.31", "asap", { cond: "As soon as reasonably practicable." }),
+    O("sub", "Affected data subjects", "DPA 2012 s.31", "asap", { cond: "As soon as reasonably practicable." }),
+  ]),
+  J("GN", "Guinea", "af", null, "verify", []),
+  J("GW", "Guinea-Bissau", "af", null, "verify", []),
+  J("KE", "Kenya", "af", "Data Protection Act 2019, s.43", "known", [
+    O("reg", "Office of the Data Protection Commissioner", "DPA 2019 s.43", "72h", { cond: "Unless the breach is unlikely to result in a real risk of harm. Give reasons if later." }),
+    O("sub", "Affected data subjects", "DPA 2019 s.43(4)", "asap", { cond: "As soon as reasonably practicable where there is a real risk of harm." }),
+  ]),
+  J("LS", "Lesotho", "af", null, "verify", []),
+  J("LR", "Liberia", "af", null, "verify", []),
+  J("LY", "Libya", "af", null, "verify", []),
+  J("MG", "Madagascar", "af", null, "verify", []),
+  J("MW", "Malawi", "af", null, "verify", []),
+  J("ML", "Mali", "af", null, "verify", []),
+  J("MR", "Mauritania", "af", null, "verify", []),
+  J("MU", "Mauritius", "af", "Data Protection Act 2017, ss.25-26", "checked", [
+    O("reg", "Data Protection Commissioner", "DPA 2017 s.25", "72h", { cond: "Where feasible. Give reasons for any delay." }),
+    O("sub", "Affected data subjects", "DPA 2017 s.26", "asap", { cond: "High risk to rights and freedoms, after notifying the Commissioner." }),
+  ]),
+  J("MA", "Morocco", "af", "Law 09-08", "verify", []),
+  J("MZ", "Mozambique", "af", null, "verify", []),
+  J("NA", "Namibia", "af", null, "verify", []),
+  J("NE", "Niger", "af", null, "verify", []),
+  J("NG", "Nigeria", "af", "Nigeria Data Protection Act 2023, s.40", "known", [
+    O("reg", "Nigeria Data Protection Commission", "NDPA 2023 s.40", "72h", { cond: "Breaches likely to result in a risk to the rights and freedoms of individuals." }),
+    O("sub", "Affected data subjects", "NDPA 2023 s.40", "asap", { cond: "Immediately, where the breach is likely to result in a high risk." }),
+  ]),
+  J("RW", "Rwanda", "af", "Law No. 058/2021, Arts. 43-45", "checked", [
+    O("reg", "National Cyber Security Authority (NCSA)", "Law 058/2021 Art. 43", "48h"),
+    O("sub", "Affected data subjects", "Law 058/2021 Art. 45", "asap", { cond: "High risk to rights and freedoms. The law gives no fixed period." }),
+  ]),
+  J("ST", "São Tomé and Príncipe", "af", null, "verify", []),
+  J("SN", "Senegal", "af", null, "verify", []),
+  J("SC", "Seychelles", "af", null, "verify", []),
+  J("SL", "Sierra Leone", "af", null, "verify", []),
+  J("SO", "Somalia", "af", null, "verify", []),
+  J("ZA", "South Africa", "af", "POPIA s.22", "known", [
+    O("reg", "Information Regulator", "POPIA s.22(1)", "asap", { cond: "As soon as reasonably possible after discovering a compromise, taking account of law enforcement needs." }),
+    O("sub", "Affected data subjects", "POPIA s.22(1)", "asap", { cond: "As soon as reasonably possible." }),
+  ]),
+  J("SS", "South Sudan", "af", null, "verify", []),
+  J("SD", "Sudan", "af", null, "verify", []),
+  J("TZ", "Tanzania", "af", "Personal Data Protection Act 2022", "verify", [
+    O("reg", "Personal Data Protection Commission", "PDPA 2022", "asap", { conf: "verify", cond: "Notification duty exists. Confirm the fixed window." }),
+  ]),
+  J("TG", "Togo", "af", null, "verify", []),
+  J("TN", "Tunisia", "af", "Organic Law 2004-63", "verify", []),
+  J("UG", "Uganda", "af", "Data Protection and Privacy Act 2019, s.23", "verify", [
+    O("reg", "Personal Data Protection Office", "DPPA 2019 s.23", "asap", { conf: "verify", cond: "Immediately after becoming aware. Confirm any fixed window in regulations." }),
+  ]),
+  J("ZM", "Zambia", "af", "Data Protection Act 2021", "verify", [
+    O("reg", "Data Protection Commissioner", "DPA 2021", "asap", { conf: "verify", cond: "A short fixed window is reported. Confirm." }),
+  ]),
+  J("ZW", "Zimbabwe", "af", "Cyber and Data Protection Act 2021", "verify", [
+    O("reg", "POTRAZ", "Cyber and Data Protection Act 2021", "asap", { conf: "verify", cond: "A short fixed window is reported. Confirm." }),
+  ]),
+];
+
+/* ------------------------------------------------------------------
+   Deadline engine. Pure functions, no DOM.
+------------------------------------------------------------------- */
+const MIN = 6e4, HOUR = 36e5, DAY = 864e5;
+
+function parseTiming(t) {
+  if (t === "asap") return { asap: true };
+  const m = /^(\d+)(h|d|bd)$/.exec(t);
+  if (!m) throw new Error("Bad timing: " + t);
+  return { n: +m[1], u: m[2] };
+}
+
+function addTime(date, n, u) {
+  const d = new Date(date.getTime());
+  if (u === "h") { d.setTime(d.getTime() + n * HOUR); return d; }
+  if (u === "d") { d.setDate(d.getDate() + n); return d; }
+  let left = n;
+  while (left > 0) {
+    d.setDate(d.getDate() + 1);
+    const wd = d.getDay();
+    if (wd !== 0 && wd !== 6) left--;
+  }
+  return d;
+}
+
+const STATUS_ORDER = ["late", "critical", "urgent", "soon", "later", "distant"];
+
+function bucketFor(remainingMs) {
+  if (remainingMs < 0) return "late";
+  if (remainingMs <= DAY) return "critical";
+  if (remainingMs <= 3 * DAY) return "urgent";
+  if (remainingMs <= 7 * DAY) return "soon";
+  if (remainingMs <= 30 * DAY) return "later";
+  return "distant";
+}
+
+/* ctx: { incident, confirmation, notification, asOf, clockStart, counts, preview } */
+function evaluate(j, o, ctx) {
+  const t = parseTiming(o.timing);
+  const fromKey = o.from || "c";
+  let trigger = null;
+  let triggerKey = fromKey;
+  if (fromKey === "n") trigger = ctx.notification || null;
+  else if (fromKey === "i") trigger = ctx.incident || ctx.confirmation || null;
+  else if (ctx.clockStart === "incident" && ctx.incident) { trigger = ctx.incident; triggerKey = "i"; }
+  else trigger = ctx.confirmation || null;
+
+  const r = {
+    j, o, trigger, triggerKey,
+    kind: t.asap ? "asap" : "fixed",
+    deadline: null, status: "info", applicability: "applies",
+    remainingMs: null, plan: null, slackMs: null, elapsedMs: null,
+    countUnknown: false,
+    conf: o.conf || j.conf,
+  };
+
+  if (o.eff && ctx.confirmation && new Date(o.eff + "T00:00:00") > ctx.confirmation) {
+    r.applicability = "pending-law";
+  }
+
+  if (o.min != null && !ctx.preview) {
+    const c = ctx.counts ? ctx.counts[j.id] : null;
+    if (c == null) r.countUnknown = true;
+    else if (c < o.min && r.applicability === "applies") r.applicability = o.harm ? "conditional" : "not-triggered";
+  }
+
+  const notified = !!(ctx.notification && ctx.notification <= ctx.asOf);
+  const planned = !!(ctx.notification && ctx.notification > ctx.asOf);
+
+  if (!trigger) {
+    r.status = fromKey === "n" ? "waiting" : "info";
+    return r;
+  }
+
+  if (t.asap) {
+    r.status = "asap";
+    const ref = notified && fromKey !== "n" ? ctx.notification : ctx.asOf;
+    r.elapsedMs = ref - trigger;
+    r.elapsedAtNotice = notified && fromKey !== "n";
+    if (planned && fromKey !== "n") r.plannedGapMs = ctx.notification - trigger;
+    return r;
+  }
+
+  r.deadline = addTime(trigger, t.n, t.u);
+
+  if (fromKey !== "n" && notified) {
+    r.slackMs = r.deadline - ctx.notification;
+    r.status = ctx.notification <= r.deadline ? "met" : "missed";
+  } else {
+    r.remainingMs = r.deadline - ctx.asOf;
+    r.status = bucketFor(r.remainingMs);
+    if (fromKey !== "n" && planned) {
+      r.plan = ctx.notification <= r.deadline ? "meets" : "misses";
+      r.slackMs = r.deadline - ctx.notification;
+    }
+  }
+  if (r.applicability === "pending-law") r.status = "pending";
+  return r;
+}
+
+function evaluateAll(list, ctx) {
+  const out = [];
+  for (const j of list) {
+    if (!ctx.preview && ctx.counts && ctx.counts[j.id] === 0) continue;
+    for (const o of j.obl) out.push(evaluate(j, o, ctx));
+  }
+  return out;
+}
+
+function coverageOf(j) {
+  const real = j.obl.filter((o) => !o.vol);
+  if (real.some((o) => o.timing !== "asap")) return "fixed";
+  if (real.length) return "asap";
+  return j.obl.length ? "voluntary" : "none";
+}
+
+const AUD_SHORT = { reg: "Regulator", sub: "Individuals", oth: "Other", asm: "Assessment" };
+
+function timingLabel(o) {
+  if (o.timing === "asap") return "ASAP";
+  const t = parseTiming(o.timing);
+  return t.n + (t.u === "bd" ? " bus. days" : t.u);
+}
+
+function summaryOf(j) {
+  if (!j.obl.length) return "No fixed deadline identified";
+  return j.obl
+    .map((o) => AUD_SHORT[o.aud].slice(0, 3) + " " + timingLabel(o))
+    .join(" · ");
+}
+
+function ruleText(o, r) {
+  if (o.timing === "asap") return o.vol ? "Voluntary, as soon as practicable" : "Without undue delay";
+  const t = parseTiming(o.timing);
+  const unit = { h: "hour", d: "day", bd: "business day" }[t.u] + (t.n === 1 ? "" : "s");
+  const from = { c: "confirmation", i: "incident", n: "notification" }[(r && r.triggerKey) || o.from || "c"];
+  return t.n + " " + unit + " from " + from;
+}
+
+/* ---------- formatting ---------- */
+const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "local time"; } catch (e) { return "local time"; } })();
+const fmtDate = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+const fmtTime = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+const fmtShort = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+
+function fmtDT(d) { return d ? fmtDate.format(d) + ", " + fmtTime.format(d) : "—"; }
+
+function fmtDur(ms) {
+  const neg = ms < 0;
+  let a = Math.abs(ms);
+  if (a < MIN) return "under 1m";
+  const d = Math.floor(a / DAY); a -= d * DAY;
+  const h = Math.floor(a / HOUR); a -= h * HOUR;
+  const m = Math.floor(a / MIN);
+  let s;
+  if (d >= 10) s = d + "d";
+  else if (d > 0) s = d + "d " + h + "h";
+  else if (h > 0) s = h + "h " + m + "m";
+  else s = m + "m";
+  return s;
+}
+
+function toInputValue(d) {
+  if (!d) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+
+function fromInputValue(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+(function () {
+  "use strict";
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const REGION_ORDER = ["eu", "eo", "na", "la", "as", "oc", "me", "af"];
+
+  /* Live dataset = built-in rules with edits layered on top (see rules.js). */
+  const DATA = { list: [], byId: {}, overrides: {} };
+  const BASE_BY_ID = Object.fromEntries(BASE_JURISDICTIONS.map((j) => [j.id, j]));
+  function rebuildData() {
+    const out = BASE_JURISDICTIONS.map((j) => (DATA.overrides[j.id] ? DATA.overrides[j.id].def : j));
+    Object.keys(DATA.overrides).forEach((id) => { if (!BASE_BY_ID[id]) out.push(DATA.overrides[id].def); });
+    DATA.list = out;
+    DATA.byId = Object.fromEntries(out.map((j) => [j.id, j]));
+  }
+
+  const S = {
+    view: "calc",
+    step: 1,
+    incident: null, confirmation: null, notification: null,
+    clockStart: "confirmation",
+    asOfMode: "now", asOfCustom: null,
+    sel: new Set(), counts: {},
+    q: "", aud: "all", example: false,
+    openRegions: new Set(["eu"]),
+  };
+
+  const ST = {
+    late: { label: "Overdue", tile: "Overdue", v: "late" },
+    critical: { label: "Due within 24 h", tile: "Within 24 h", v: "critical" },
+    urgent: { label: "Due within 3 days", tile: "Within 3 days", v: "urgent" },
+    soon: { label: "Due within 7 days", tile: "Within 7 days", v: "soon" },
+    later: { label: "Due within 30 days", tile: "Within 30 days", v: "later" },
+    distant: { label: "More than 30 days", tile: "Over 30 days", v: "distant" },
+    met: { label: "Notified in time", tile: "Notified in time", v: "met" },
+    missed: { label: "Notified late", tile: "Notified late", v: "late" },
+    asap: { label: "No fixed date", tile: "No fixed date", v: "info" },
+    waiting: { label: "Starts at notification", tile: "Waiting on notice", v: "info" },
+    pending: { label: "Not yet in force", tile: "Not yet in force", v: "pending" },
+    info: { label: "Needs a date", tile: "Needs a date", v: "info" },
+  };
+  const stVar = (status) => "var(--st-" + (ST[status] ? ST[status].v : "info") + ")";
+  const stClass = (status) => "st-" + (status === "missed" ? "late" : status);
+  const CONF = {
+    checked: { tag: "Checked", long: "Checked against current published sources, October 2026" },
+    known: { tag: "Established", long: "Established law, from general knowledge and not re-checked" },
+    verify: { tag: "Verify", long: "Recent, ambiguous or thinly sourced. Confirm before relying on it" },
+  };
+
+  /* ------------------------------------------------------------------ state helpers */
+  function asOf() { return S.asOfMode === "custom" && S.asOfCustom ? S.asOfCustom : new Date(); }
+  function ctx(preview) {
+    return { incident: S.incident, confirmation: S.confirmation, notification: S.notification, asOf: asOf(), clockStart: S.clockStart, counts: S.counts, preview: !!preview };
+  }
+  function loadExample() {
+    const now = new Date(); now.setSeconds(0, 0);
+    S.incident = new Date(now.getTime() - 6 * DAY);
+    S.confirmation = new Date(now.getTime() - 40 * HOUR);
+    S.notification = new Date(now.getTime() + 30 * HOUR);
+    S.clockStart = "confirmation"; S.asOfMode = "now"; S.asOfCustom = null;
+    S.sel = new Set(["DE", "FR", "GB", "US-CA", "US-NY", "US-TX", "KR", "JP", "SG", "BR", "AU", "IN", "MY", "EG"]);
+    S.counts = { DE: 12000, FR: 8500, GB: 21000, "US-CA": 3400, "US-NY": 1800, "US-TX": 190, KR: 900, JP: 450, SG: 620, BR: 5200, AU: 7800, IN: 15000, MY: 1300, EG: 240 };
+    S.example = true;
+  }
+  function clearAll() {
+    S.incident = S.confirmation = S.notification = null;
+    S.clockStart = "confirmation"; S.asOfMode = "now"; S.asOfCustom = null;
+    S.sel = new Set(); S.counts = {}; S.example = false; S.q = ""; S.aud = "all";
+  }
+  function syncInputs() {
+    $("#inIncident").value = toInputValue(S.incident);
+    $("#inConfirm").value = toInputValue(S.confirmation);
+    $("#inNotify").value = toInputValue(S.notification);
+    $("#asOfMode").value = S.asOfMode;
+    $("#asOfWrap").hidden = S.asOfMode !== "custom";
+    $("#inAsOf").value = toInputValue(S.asOfCustom);
+    $$('input[name="clock"]').forEach((r) => (r.checked = r.value === S.clockStart));
+    $$('input[name="aud"]').forEach((r) => (r.checked = r.value === S.aud));
+    $("#q").value = S.q;
+    $("#exampleBanner").hidden = !S.example;
+  }
+
+  /* ------------------------------------------------------------------ stepper */
+  function canGo(n) {
+    if (n === 1) return true;
+    if (!S.confirmation) return false;
+    if (n === 2) return true;
+    return S.sel.size > 0;
+  }
+  function go(n, focus) {
+    if (!canGo(n)) return;
+    S.step = n;
+    for (let i = 1; i <= 4; i++) $("#step" + i).hidden = i !== n;
+    $$(".step-btn").forEach((b) => {
+      const i = +b.dataset.step;
+      b.disabled = !canGo(i);
+      b.classList.toggle("done", i < n && canGo(i + 1));
+      if (i === n) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+    });
+    renderCurrent();
+    if (focus) { const h = $("#h-step" + n); h.scrollIntoView({ block: "start" }); h.focus({ preventScroll: true }); }
+  }
+  function refreshStepper() {
+    $$(".step-btn").forEach((b) => { b.disabled = !canGo(+b.dataset.step); });
+  }
+  function renderCurrent() {
+    if (S.step === 1) renderStep1();
+    else if (S.step === 2) renderPicker();
+    else if (S.step === 3) renderCounts();
+    else renderResults();
+  }
+
+  /* ------------------------------------------------------------------ step 1 */
+  function renderStep1() {
+    refreshStepper();
+    const msgs = [];
+    const { incident: i, confirmation: c, notification: n } = S;
+    if (!c) msgs.push(["err", "Add a confirmation date to calculate deadlines."]);
+    if (i && c && i > c) msgs.push(["warn", "The incident date is after the confirmation date. Most regimes expect the incident first, so check the order."]);
+    if (n && c && n < c) msgs.push(["warn", "The notification date is before the confirmation date. Check the dates."]);
+    if (S.asOfMode === "custom" && S.asOfCustom && c && S.asOfCustom < c) msgs.push(["warn", "The reference time is before confirmation, so no clock has started yet."]);
+    $("#dateMsgs").innerHTML = msgs.map((m) => '<p class="msg ' + m[0] + '">' + esc(m[1]) + "</p>").join("");
+
+    const now = asOf();
+    const ro = [];
+    if (i && c) ro.push(["Undetected for", fmtDur(c - i)]);
+    if (c) ro.push([(S.asOfMode === "custom" ? "At reference time, " : "Now, ") + "since confirmation", fmtDur(now - c)]);
+    if (c && n) ro.push(["Confirmation to notification", fmtDur(n - c)]);
+    $("#readouts").innerHTML = ro.map((r) => '<div class="readout"><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + "</span></div>").join("");
+
+    const cov = { fixed: 0, asap: 0, voluntary: 0, none: 0 };
+    DATA.list.forEach((j) => cov[coverageOf(j)]++);
+    $("#overviewSummary").textContent =
+      DATA.list.length + " jurisdictions in the dataset. " + cov.fixed + " set a fixed deadline, " + cov.asap +
+      " require notice “without undue delay”, " + cov.voluntary + (cov.voluntary === 1 ? " is" : " are") + " voluntary only, and " + cov.none + " have no deadline identified.";
+
+    const results = evaluateAll(DATA.list, ctx(true));
+    drawTimeline($("#tlAll"), results, ctx(true));
+    $("#legendAll").innerHTML = legendHTML(results);
+
+    const fast = results
+      .filter((r) => r.kind === "fixed" && r.deadline && r.trigger && r.applicability === "applies" && r.status !== "pending")
+      .sort((a, b) => (a.deadline - a.trigger) - (b.deadline - b.trigger))
+      .slice(0, 6);
+    $("#fastest").innerHTML = c
+      ? fast.map((r) => '<li><span class="big">' + esc(timingLabel(r.o)) + "</span><span><b>" + esc(r.j.name) + '</b></span><span class="muted">' + esc(r.o.auth) + "</span></li>").join("")
+      : '<li class="muted">Add a confirmation date to see these.</li>';
+
+    $("#to2").disabled = !c;
+    $("#to2hint").textContent = c ? "" : "A confirmation date is required.";
+  }
+
+  function legendHTML(results) {
+    const counts = {};
+    results.forEach((r) => {
+      if (r.deadline && (r.applicability === "applies" || r.applicability === "conditional") && r.status !== "pending") counts[r.status] = (counts[r.status] || 0) + 1;
+    });
+    const order = ["late", "critical", "urgent", "soon", "later", "distant", "met", "missed"];
+    return order.filter((k) => counts[k]).map((k) => '<li><i style="--c:' + stVar(k) + '"></i>' + esc(ST[k].label) + " <b>" + counts[k] + "</b></li>").join("")
+      + '<li><i class="hollow" style="--c:var(--ink-3)"></i>Ring: applies only if significant harm is likely</li>';
+  }
+
+  /* ------------------------------------------------------------------ timeline */
+  const popData = new WeakMap();
+
+  function drawTimeline(host, results, c) {
+    host.innerHTML = "";
+    if (!c.confirmation) { host.innerHTML = '<div class="tl-wrap"><div class="tl-empty">Add a confirmation date to draw the timeline.</div></div>'; return; }
+    const wrap = document.createElement("div");
+    wrap.className = "tl-wrap";
+    wrap.innerHTML = '<div class="tl-scroll"></div><div class="pop" role="dialog" aria-label="Deadlines at this time" hidden></div><div class="tl-foot"></div>';
+    host.appendChild(wrap);
+    const scroll = $(".tl-scroll", wrap);
+    const W = Math.max(wrap.clientWidth || 760, 760);
+
+    const plotted = results.filter((r) => r.deadline && (r.applicability === "applies" || r.applicability === "conditional") && r.status !== "pending");
+    const T0 = c.confirmation.getTime();
+    const pts = [T0, c.asOf.getTime()];
+    if (c.incident) pts.push(c.incident.getTime());
+    if (c.notification) pts.push(c.notification.getTime());
+    plotted.forEach((r) => pts.push(r.deadline.getTime()));
+    const lo = Math.min(...pts, T0 - DAY), hi = Math.max(...pts, T0 + 4 * DAY);
+    const f = (ms) => Math.asinh((ms - T0) / DAY);
+    const padL = 40, padR = 40;
+    const x = (ms) => padL + ((f(ms) - f(lo)) / (f(hi) - f(lo))) * (W - padL - padR);
+
+    /* events */
+    const evs = [];
+    if (c.incident) evs.push({ k: "incident", t: c.incident, label: "Incident " + fmtShort.format(c.incident) });
+    evs.push({ k: "confirm", t: c.confirmation, label: "Confirmed " + fmtShort.format(c.confirmation) });
+    if (c.notification) evs.push({ k: "notify", t: c.notification, label: (c.notification <= c.asOf ? "Notified " : "Planned notice ") + fmtShort.format(c.notification) });
+    evs.push({ k: "now", t: c.asOf, label: (S.asOfMode === "custom" ? "As of " : "Now ") + fmtShort.format(c.asOf) });
+    evs.forEach((e) => { e.x = x(e.t.getTime()); e.w = e.label.length * 6.1 + 6; e.flip = e.x + e.w > W - 8; e.x0 = e.flip ? e.x - e.w : e.x; });
+    evs.sort((a, b) => a.x0 - b.x0);
+    const rowEnd = [];
+    evs.forEach((e) => {
+      let r = 0;
+      while (rowEnd[r] !== undefined && e.x0 < rowEnd[r] + 6) r++;
+      e.row = r; rowEnd[r] = e.x0 + e.w;
+    });
+    const nRows = evs.reduce((m, e) => Math.max(m, e.row + 1), 1);
+
+    /* stacks */
+    const CAP = 7, STEP = 15;
+    const lanes = { A: new Map(), B: new Map() };
+    plotted.forEach((r) => {
+      const lane = r.o.aud === "sub" ? "B" : "A";
+      const px = x(r.deadline.getTime());
+      const key = Math.round(px / 13);
+      if (!lanes[lane].has(key)) lanes[lane].set(key, []);
+      lanes[lane].get(key).push({ r, px });
+    });
+    const rowsOf = (m) => Math.min(CAP, Math.max(1, ...Array.from(m.values()).map((a) => a.length)));
+    const rowsA = rowsOf(lanes.A), rowsB = rowsOf(lanes.B);
+    const labelsH = 10 + nRows * 15 + 6;
+    const laneAH = rowsA * STEP + 16, laneBH = rowsB * STEP + 16;
+    const axisTop = labelsH + laneAH, axisH = 46, axisBot = axisTop + axisH;
+    const H = axisBot + laneBH + 4;
+
+    const out = [];
+    out.push('<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Timeline of notification deadlines. The list below has the same information.">');
+    out.push('<rect class="axis-band" x="0" y="' + axisTop + '" width="' + W + '" height="' + axisH + '"/>');
+    out.push('<line class="axis" x1="0" x2="' + W + '" y1="' + axisTop + '" y2="' + axisTop + '"/><line class="axis" x1="0" x2="' + W + '" y1="' + axisBot + '" y2="' + axisBot + '"/>');
+
+    /* phase bars */
+    if (c.incident) {
+      const x1 = x(c.incident.getTime()), x2 = x(T0);
+      if (x2 > x1) out.push('<rect class="phase-a" x="' + x1 + '" y="' + (axisTop + 4) + '" width="' + (x2 - x1) + '" height="6" rx="3"><title>Undetected for ' + esc(fmtDur(T0 - c.incident.getTime())) + "</title></rect>");
+    }
+    if (c.notification && c.notification > c.confirmation) {
+      out.push('<rect class="phase-b" x="' + x(T0) + '" y="' + (axisTop + 4) + '" width="' + (x(c.notification.getTime()) - x(T0)) + '" height="6" rx="3"><title>Confirmation to notification: ' + esc(fmtDur(c.notification - c.confirmation)) + "</title></rect>");
+    }
+
+    /* ticks */
+    const cand = [-365, -180, -90, -60, -30, -14, -7, -3, -1, 0, 1, 3, 7, 14, 30, 60, 90, 180, 365, 730];
+    let lastX = -999;
+    cand.forEach((d) => {
+      const ms = T0 + d * DAY;
+      if (ms < lo || ms > hi) return;
+      const px = x(ms);
+      if (px - lastX < 62 || px < 26 || px > W - 26) return;
+      lastX = px;
+      const rel = d === 0 ? "C" : d > 0 ? "C+" + d + "d" : "C−" + Math.abs(d) + "d";
+      out.push('<line class="tick" x1="' + px + '" x2="' + px + '" y1="' + (axisTop + 14) + '" y2="' + (axisTop + 19) + '"/>');
+      out.push('<text class="tick-d" x="' + px + '" y="' + (axisTop + 31) + '" text-anchor="middle">' + esc(fmtShort.format(new Date(ms))) + "</text>");
+      out.push('<text class="tick-r" x="' + px + '" y="' + (axisTop + 42) + '" text-anchor="middle">' + rel + "</text>");
+    });
+
+    /* event lines and labels */
+    evs.forEach((e) => {
+      out.push('<line class="ev ev-' + e.k + '" x1="' + e.x + '" x2="' + e.x + '" y1="' + (10 + e.row * 15 + 3) + '" y2="' + (H - 2) + '"/>');
+    });
+    evs.forEach((e) => {
+      out.push('<text class="ev-label" x="' + (e.flip ? e.x - 4 : e.x + 4) + '" y="' + (10 + e.row * 15 + 9) + '" text-anchor="' + (e.flip ? "end" : "start") + '">' + esc(e.label) + "</text>");
+    });
+
+    out.push('<text class="lane" x="8" y="' + (axisTop - 6) + '">Regulators &amp; authorities</text>');
+    out.push('<text class="lane" x="8" y="' + (axisBot + 14) + '">Individuals</text>');
+
+    /* dots */
+    const stackMap = {};
+    ["A", "B"].forEach((lane) => {
+      lanes[lane].forEach((items, key) => {
+        items.sort((a, b) => a.r.deadline - b.r.deadline || a.r.j.name.localeCompare(b.r.j.name));
+        const cx = items.reduce((s, it) => s + it.px, 0) / items.length;
+        const id = lane + key;
+        stackMap[id] = items.map((it) => it.r);
+        const shown = items.length > CAP ? CAP - 1 : items.length;
+        const extra = items.length - shown;
+        const dir = lane === "A" ? -1 : 1;
+        const base = lane === "A" ? axisTop - 13 : axisBot + 13;
+        const rowsUsed = shown + (extra ? 1 : 0);
+        const yTop = lane === "A" ? base - (rowsUsed - 1) * STEP - 8 : base - 8;
+        const hh = (rowsUsed - 1) * STEP + 16;
+        const first = items[0].r;
+        const label = items.length + (items.length === 1 ? " deadline" : " deadlines") + " on " + fmtDT(first.deadline) + ": " + items.slice(0, 4).map((it) => it.r.j.name).join(", ") + (items.length > 4 ? " and " + (items.length - 4) + " more" : "");
+        out.push('<g class="stack" tabindex="0" role="button" data-k="' + id + '" aria-label="' + esc(label) + '">');
+        out.push('<rect class="hit" x="' + (cx - 9) + '" y="' + yTop + '" width="18" height="' + hh + '" rx="9"/>');
+        for (let i = 0; i < shown; i++) {
+          const r = items[i].r;
+          const cy = base + dir * i * STEP;
+          const hollow = r.applicability === "conditional" ? " hollow" : "";
+          const style = "--c:" + stVar(r.status);
+          if (r.o.aud === "asm") out.push('<rect class="dot' + hollow + '" style="' + style + '" x="' + (cx - 5.5) + '" y="' + (cy - 5.5) + '" width="11" height="11" rx="2"/>');
+          else out.push('<circle class="dot' + hollow + '" style="' + style + '" cx="' + cx + '" cy="' + cy + '" r="6"/>');
+        }
+        if (extra) out.push('<text class="more" x="' + cx + '" y="' + (base + dir * shown * STEP + 4) + '" text-anchor="middle">+' + (extra + 0) + "</text>");
+        out.push("</g>");
+      });
+    });
+    out.push("</svg>");
+    scroll.innerHTML = out.join("");
+    $(".tl-foot", wrap).innerHTML =
+      "<span>Time scale is compressed: hours near confirmation (C) take more room than weeks.</span>" +
+      "<span>Select a stack to list its jurisdictions.</span>" +
+      (plotted.length ? "" : "<span>No fixed-date deadlines to plot yet.</span>");
+    popData.set(wrap, { stackMap, c, W });
+
+    wrap.addEventListener("click", (e) => {
+      const g = e.target.closest(".stack");
+      if (g) { openPop(wrap, g); e.stopPropagation(); }
+      else if (!e.target.closest(".pop")) closePop(wrap);
+    });
+    wrap.addEventListener("keydown", (e) => {
+      if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("stack")) { e.preventDefault(); openPop(wrap, e.target); }
+      if (e.key === "Escape") closePop(wrap);
+    });
+  }
+
+  function openPop(wrap, g) {
+    const d = popData.get(wrap);
+    const items = d.stackMap[g.dataset.k];
+    const pop = $(".pop", wrap);
+    const first = items[0];
+    pop.innerHTML =
+      '<button class="btn small x" type="button">Close</button><h4>' + esc(fmtDT(first.deadline)) + "</h4>" +
+      "<ul>" + items.map((r) =>
+        '<li><span class="nm">' + esc(r.j.name) + '</span><span class="muted">' + esc(r.o.auth) + " · " + esc(ruleText(r.o, r)) + "</span><span>" +
+        '<span class="chip ' + stClass(r.status) + '">' + esc(ST[r.status].label) + "</span> " +
+        (r.applicability === "conditional" ? '<span class="chip plain">If significant harm</span>' : "") + "</span></li>").join("") + "</ul>";
+    pop.hidden = false;
+    const gb = g.getBoundingClientRect(), wb = wrap.getBoundingClientRect();
+    const popW = Math.min(340, wb.width - 16);
+    let left = gb.left - wb.left + gb.width / 2 - popW / 2;
+    left = Math.max(8, Math.min(left, wb.width - popW - 8));
+    pop.style.left = left + "px";
+    const below = gb.top - wb.top + gb.height + 6;
+    pop.style.top = Math.max(8, Math.min(below, wb.height - 120)) + "px";
+    $(".x", pop).addEventListener("click", () => { closePop(wrap); g.focus(); });
+  }
+  function closePop(wrap) { const p = $(".pop", wrap); if (p) p.hidden = true; }
+  document.addEventListener("click", (e) => { $$(".tl-wrap").forEach((w) => { if (!w.contains(e.target)) closePop(w); }); });
+
+  /* ------------------------------------------------------------------ step 2 */
+  const QUICK = [
+    ["EU/EEA & UK", () => DATA.list.filter((j) => j.region === "eu").map((j) => j.id)],
+    ["US states, HIPAA & SEC", () => DATA.list.filter((j) => j.id.startsWith("US-") && j.id !== "US-OTHER").map((j) => j.id)],
+    ["Asia & Oceania", () => DATA.list.filter((j) => j.region === "as" || j.region === "oc").map((j) => j.id)],
+    ["Latin America", () => DATA.list.filter((j) => j.region === "la").map((j) => j.id)],
+    ["Middle East & Africa", () => DATA.list.filter((j) => j.region === "me" || j.region === "af").map((j) => j.id)],
+    ["Everywhere with a fixed deadline", () => DATA.list.filter((j) => coverageOf(j) === "fixed").map((j) => j.id)],
+  ];
+  let pickerBuilt = false;
+  function buildPicker() {
+    $("#quick").innerHTML = QUICK.map((q, i) => '<button class="btn small" type="button" data-q="' + i + '">+ ' + esc(q[0]) + "</button>").join("") + '<button class="btn small" type="button" data-q="clear">Clear selection</button>';
+    const html = REGION_ORDER.map((rk) => {
+      const list = DATA.list.filter((j) => j.region === rk).sort((a, b) => a.name.localeCompare(b.name));
+      return '<details class="region" data-r="' + rk + '"' + (S.openRegions.has(rk) ? " open" : "") + '><summary><span class="rn">' + esc(REGIONS[rk]) + '</span><span class="rc" data-rc="' + rk + '"></span></summary><div class="items">' +
+        list.map((j) =>
+          '<label class="pick' + (coverageOf(j) === "fixed" ? " has-fixed" : "") + '" data-id="' + esc(j.id) + '" data-search="' + esc((j.name + " " + j.id + " " + (j.law || "")).toLowerCase()) + '">' +
+          '<input type="checkbox" value="' + esc(j.id) + '"><span><span class="nm">' + esc(j.name) + (j.id.includes("-") ? "" : '<span class="iso">' + esc(j.id) + "</span>") + '</span><span class="sm">' + esc(summaryOf(j)) + "</span></span></label>"
+        ).join("") + "</div></details>";
+    }).join("");
+    $("#pickList").innerHTML = html;
+    pickerBuilt = true;
+  }
+  function renderPicker() {
+    refreshStepper();
+    if (!pickerBuilt) buildPicker();
+    $$("#pickList .pick").forEach((l) => { $("input", l).checked = S.sel.has(l.dataset.id); });
+    applySearch();
+    updateSelUI();
+  }
+  function applySearch() {
+    const q = S.q.trim().toLowerCase();
+    $$("#pickList .region").forEach((d) => {
+      let vis = 0, selN = 0, total = 0;
+      $$(".pick", d).forEach((l) => {
+        const show = !q || l.dataset.search.includes(q);
+        l.hidden = !show;
+        if (show) vis++;
+        total++;
+        if (S.sel.has(l.dataset.id)) selN++;
+      });
+      d.hidden = vis === 0;
+      if (q && vis) d.open = true;
+      $('[data-rc="' + d.dataset.r + '"]', d).textContent = (selN ? selN + " selected · " : "") + (q ? vis + " of " : "") + total;
+    });
+  }
+  function updateSelUI() {
+    const ids = Array.from(S.sel).filter((id) => DATA.byId[id]).sort((a, b) => DATA.byId[a].name.localeCompare(DATA.byId[b].name));
+    $("#selChips").innerHTML = ids.length
+      ? ids.map((id) => '<button type="button" class="chip chip-x" data-rm="' + esc(id) + '" aria-label="Remove ' + esc(DATA.byId[id].name) + '">' + esc(DATA.byId[id].name) + " ×</button>").join("")
+      : '<span class="muted">Nothing selected yet.</span>';
+    $("#selCount").textContent = S.sel.size + " selected";
+    $("#to3").disabled = S.sel.size === 0;
+    $$("#pickList .region").forEach((d) => {
+      let selN = 0, total = 0;
+      $$(".pick", d).forEach((l) => { total++; if (S.sel.has(l.dataset.id)) selN++; });
+      const q = S.q.trim();
+      $('[data-rc="' + d.dataset.r + '"]', d).textContent = (selN ? selN + " selected · " : "") + (q ? $$(".pick:not([hidden])", d).length + " of " : "") + total;
+    });
+    refreshStepper();
+  }
+
+  /* ------------------------------------------------------------------ step 3 */
+  function thrLabel(o) {
+    const m = o.min;
+    const base = m > 1 && m % 10 === 1 ? "more than " + (m - 1).toLocaleString() : m.toLocaleString() + " or more";
+    return AUD_SHORT[o.aud] + " duty: " + base + (o.harm ? " (or significant harm)" : "");
+  }
+  function renderCounts() {
+    refreshStepper();
+    const ids = Array.from(S.sel).filter((id) => DATA.byId[id]).sort((a, b) => DATA.byId[a].name.localeCompare(DATA.byId[b].name));
+    $("#countRows").innerHTML = ids.map((id) => {
+      const j = DATA.byId[id];
+      const thr = j.obl.filter((o) => o.min != null);
+      const seen = new Set();
+      const chips = thr.map(thrLabel).filter((t) => (seen.has(t) ? false : seen.add(t))).map((t) => '<span class="chip plain">' + esc(t) + "</span>").join("");
+      const v = S.counts[id];
+      return '<div class="crow" data-id="' + esc(id) + '"><div><div class="nm">' + esc(j.name) + '</div><div class="law">' + esc(j.law || summaryOf(j)) + "</div>" +
+        (chips ? '<div class="thr">' + chips + "</div>" : '<div class="law">No volume thresholds in this dataset.</div>') +
+        '<div class="zero" hidden>Zero affected: this jurisdiction will be left out of the results.</div></div>' +
+        '<div class="field"><label class="sr" for="c-' + esc(id) + '">Affected people in ' + esc(j.name) + '</label><input id="c-' + esc(id) + '" type="number" min="0" step="1" inputmode="numeric" placeholder="Unknown" value="' + (v == null ? "" : v) + '"></div></div>';
+    }).join("");
+    $$(".crow").forEach((row) => zeroHint(row));
+  }
+  function zeroHint(row) {
+    const v = S.counts[row.dataset.id];
+    $(".zero", row).hidden = v !== 0;
+  }
+
+  /* ------------------------------------------------------------------ step 4 */
+  const audMatch = (r) => S.aud === "all" || (S.aud === "sub" ? r.o.aud === "sub" : r.o.aud !== "sub");
+
+  function relText(r) {
+    switch (r.status) {
+      case "late": return "Overdue by " + fmtDur(-r.remainingMs);
+      case "critical": case "urgent": case "soon": case "later": case "distant": return "in " + fmtDur(r.remainingMs);
+      case "met": return "Notified " + fmtDur(r.slackMs) + " before the deadline";
+      case "missed": return "Notified " + fmtDur(-r.slackMs) + " after the deadline";
+      case "pending": return "Takes effect " + fmtDate.format(new Date(r.o.eff + "T00:00:00"));
+      default: return "";
+    }
+  }
+  function asapText(r) {
+    if (!r.trigger) return "";
+    if (r.elapsedAtNotice) return "Notice sent " + fmtDur(r.elapsedMs) + " after the clock started";
+    let t = "Clock running for " + fmtDur(r.elapsedMs);
+    return t;
+  }
+
+  function rowHTML(r) {
+    const j = r.j, o = r.o;
+    const st = r.status;
+    const verify = r.conf === "verify";
+    let due = "";
+    if (r.deadline) due = '<time datetime="' + r.deadline.toISOString() + '">' + esc(fmtDT(r.deadline)) + '</time><span class="rel">' + esc(relText(r)) + "</span>";
+    else if (st === "asap") due = '<span class="rel">' + esc(asapText(r)) + "</span>";
+    else if (st === "waiting") due = '<span class="rel">Add a notification date to start this clock</span>';
+    let plan = "";
+    if (r.plan === "misses") plan = '<span class="res-plan misses">Your planned notice date misses this by ' + esc(fmtDur(-r.slackMs)) + ".</span>";
+    else if (r.plan === "meets") plan = '<span class="res-plan meets">Your planned notice date leaves ' + esc(fmtDur(r.slackMs)) + " to spare.</span>";
+    else if (st === "asap" && r.plannedGapMs != null) plan = '<span class="res-plan">Planned notice is ' + esc(fmtDur(r.plannedGapMs)) + " after the clock starts.</span>";
+
+    let vol = "";
+    if (o.min != null) {
+      if (r.applicability === "conditional") vol = "Below the volume threshold. Applies only if significant harm is likely.";
+      else if (r.applicability === "not-triggered") vol = "Below the volume threshold, so not required at this count.";
+      else if (r.countUnknown) vol = "No count entered, so this is treated as meeting the threshold.";
+      else vol = "Meets the volume threshold.";
+    }
+    const dl = [
+      ["Legal basis", o.basis],
+      ["Rule", ruleText(o, r) + (r.triggerKey === "i" && (o.from || "c") === "c" ? " (conservative setting)" : "")],
+      ["Starts from", r.trigger ? fmtDT(r.trigger) : "Not set"],
+      o.cond ? ["Conditions", o.cond] : null,
+      vol ? ["Volume", thrLabel(o) + ". " + vol] : null,
+      j.note ? ["Note", j.note] : null,
+      ["Source check", CONF[r.conf].long],
+      j.reviewedOn ? ["Last reviewed", j.reviewedOn] : null,
+      j.source ? ["Source", j.source] : null,
+    ].filter(Boolean).map((p) => "<dt>" + esc(p[0]) + "</dt><dd>" + esc(p[1]) + "</dd>").join("");
+
+    return '<li class="res ' + stClass(st) + '"><div class="res-body">' +
+      '<div class="res-top"><div class="res-id"><span class="res-name">' + esc(j.name) + (j.id.includes("-") ? "" : '<span class="iso">' + esc(j.id) + "</span>") + '</span><span class="res-law">' + esc(j.law || "") + "</span></div>" +
+      '<div class="res-due">' + due + "</div></div>" +
+      '<div class="res-meta"><span class="chip ' + stClass(st) + '">' + esc(ST[st].label) + '</span><span class="chip aud">' + esc(AUD_SHORT[o.aud]) + "</span>" +
+      (r.applicability === "conditional" ? '<span class="chip plain">If significant harm</span>' : "") +
+      (o.vol ? '<span class="chip plain">Voluntary</span>' : "") +
+      (verify ? '<span class="chip verify">Verify</span>' : "") +
+      (DATA.overrides[j.id] ? '<span class="chip plain">Edited rule</span>' : "") +
+      '<span class="auth">' + esc(o.auth) + " · " + esc(ruleText(o, r)) + "</span></div>" +
+      (plan ? "<div>" + plan + "</div>" : "") +
+      '<details class="more"><summary>Rule details</summary><dl>' + dl + "</dl></details></div></li>";
+  }
+
+  function renderResults() {
+    refreshStepper();
+    const c = ctx(false);
+    const sel = DATA.list.filter((j) => S.sel.has(j.id));
+    const all = evaluateAll(sel, c);
+    const zeroed = sel.filter((j) => S.counts[j.id] === 0);
+    const live = all.filter((r) => r.applicability === "applies" || r.applicability === "conditional");
+
+    const counted = sel.length - zeroed.length;
+    $("#resMeta").textContent = "Calculated " + fmtDT(c.asOf) + " (" + TZ + "). " + counted + " jurisdiction" + (counted === 1 ? "" : "s") + " counted" +
+      (zeroed.length ? ", " + zeroed.length + " left out for zero affected." : ".") + (S.clockStart === "incident" ? " Clocks start at the incident date." : "");
+
+    /* tiles */
+    const cnt = {};
+    live.forEach((r) => { if (r.kind === "fixed" && r.deadline && r.status !== "pending") cnt[r.status] = (cnt[r.status] || 0) + 1; else if (r.status === "asap") cnt.asap = (cnt.asap || 0) + 1; });
+    const keys = ["late", "critical", "urgent", "soon", "later", "distant"];
+    if (cnt.met || cnt.missed) keys.push("met", "missed");
+    keys.push("asap");
+    $("#tiles").innerHTML = keys.map((k) => '<div class="tile ' + stClass(k) + (cnt[k] ? "" : " zero") + '"><span class="num">' + (cnt[k] || 0) + '</span><span class="lab">' + esc(ST[k].tile) + "</span></div>").join("");
+
+    const shown = all.filter(audMatch);
+    drawTimeline($("#tlSel"), shown, c);
+    $("#legendSel").innerHTML = legendHTML(shown);
+
+    const fixed = shown.filter((r) => r.kind === "fixed" && r.deadline && (r.applicability === "applies" || r.applicability === "conditional") && r.status !== "pending" && r.status !== "waiting")
+      .sort((a, b) => a.deadline - b.deadline || a.j.name.localeCompare(b.j.name));
+    $("#listFixed").innerHTML = fixed.length ? fixed.map(rowHTML).join("") : '<li class="muted">No fixed-date deadlines for the current selection.</li>';
+    $("#h-fixed").textContent = "Fixed deadlines (" + fixed.length + ")";
+
+    const asap = shown.filter((r) => r.kind === "asap" && (r.applicability === "applies" || r.applicability === "conditional"))
+      .sort((a, b) => a.j.name.localeCompare(b.j.name));
+    $("#secAsap").hidden = !asap.length;
+    $("#listAsap").innerHTML = asap.map(rowHTML).join("");
+
+    const waiting = shown.filter((r) => r.status === "waiting" && (r.applicability === "applies" || r.applicability === "conditional"));
+    const notTrig = shown.filter((r) => r.applicability === "not-triggered");
+    const pending = shown.filter((r) => r.applicability === "pending-law");
+    const noOb = sel.filter((j) => !j.obl.length && S.counts[j.id] !== 0);
+    const fold = (title, n, inner) => n ? '<details class="fold"><summary><span>' + esc(title) + '</span><span class="mono muted">' + n + '</span></summary><div class="inner">' + inner + "</div></details>" : "";
+    $("#folds").innerHTML =
+      fold("Starts when you notify", waiting.length, '<p class="muted">Follow-on clocks that run from your notification date. Set it in step 1.</p><ul class="res-list">' + waiting.map(rowHTML).join("") + "</ul>") +
+      fold("Not triggered at this volume", notTrig.length, '<ul class="res-list">' + notTrig.map(rowHTML).join("") + "</ul>") +
+      fold("Not yet in force", pending.length, '<ul class="res-list">' + pending.map(rowHTML).join("") + "</ul>") +
+      fold("No deadline identified", noOb.length, '<p class="muted">The dataset has no fixed breach-notification deadline for these. That is not the same as no obligation, so confirm locally.</p><div class="none-list">' + noOb.map((j) => '<span class="chip plain" title="' + esc(j.note || "") + '">' + esc(j.name) + "</span>").join("") + "</div>") +
+      fold("Left out: zero affected", zeroed.length, '<div class="none-list">' + zeroed.map((j) => '<span class="chip plain">' + esc(j.name) + "</span>").join("") + "</div>");
+    S._last = { all, sel, c };
+  }
+
+  /* ------------------------------------------------------------------ export */
+  function csvCell(v) { v = v == null ? "" : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function buildCsv() {
+    const { all } = S._last;
+    const head = ["Jurisdiction", "Code", "Audience", "Authority", "Rule", "Starts from", "Deadline", "Status", "Applies", "Legal basis", "Source check"];
+    const rows = all.slice().sort((a, b) => (a.deadline ? a.deadline.getTime() : 9e15) - (b.deadline ? b.deadline.getTime() : 9e15)).map((r) => [
+      r.j.name, r.j.id, AUD_SHORT[r.o.aud], r.o.auth, ruleText(r.o, r), r.trigger ? fmtDT(r.trigger) : "", r.deadline ? fmtDT(r.deadline) : "No fixed date",
+      ST[r.status].label, r.applicability, r.o.basis, CONF[r.conf].tag,
+    ]);
+    return [head].concat(rows).map((row) => row.map(csvCell).join(",")).join("\n");
+  }
+  function buildText() {
+    const { all, c } = S._last;
+    const fixed = all.filter((r) => r.deadline && (r.applicability === "applies" || r.applicability === "conditional") && r.status !== "pending").sort((a, b) => a.deadline - b.deadline);
+    const lines = ["Breach notification deadlines (calculated " + fmtDT(c.asOf) + ", " + TZ + ")",
+      "Confirmation: " + fmtDT(c.confirmation) + (c.incident ? " | Incident: " + fmtDT(c.incident) : "") + (c.notification ? " | Notification: " + fmtDT(c.notification) : ""), ""];
+    fixed.forEach((r) => lines.push("- " + fmtDT(r.deadline) + " | " + r.j.name + " | " + AUD_SHORT[r.o.aud] + " (" + r.o.auth + ") | " + ST[r.status].label + (r.conf === "verify" ? " | VERIFY" : "")));
+    const asap = all.filter((r) => r.kind === "asap" && (r.applicability === "applies" || r.applicability === "conditional"));
+    if (asap.length) { lines.push("", "No fixed date (without undue delay):"); asap.forEach((r) => lines.push("- " + r.j.name + " | " + AUD_SHORT[r.o.aud] + " (" + r.o.auth + ")")); }
+    lines.push("", "Planning aid only, not legal advice.");
+    return lines.join("\n");
+  }
+  function copyOut(text, btn, outSel) {
+    const box = $(outSel || "#copyOut");
+    const done = () => { const old = btn.textContent; btn.textContent = "Copied"; setTimeout(() => { btn.textContent = old; }, 1400); box.innerHTML = ""; };
+    const fallback = () => {
+      box.innerHTML = '<div class="copybox"><p class="muted">Copying was blocked here. Select the text below and copy it.</p><textarea readonly class="copyarea"></textarea></div>';
+      const ta = $(".copyarea", box); ta.value = text; ta.focus(); ta.select();
+    };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+  }
+
+  /* ------------------------------------------------------------------ events */
+  function onDates() {
+    S.incident = fromInputValue($("#inIncident").value);
+    S.confirmation = fromInputValue($("#inConfirm").value);
+    S.notification = fromInputValue($("#inNotify").value);
+    S.asOfCustom = fromInputValue($("#inAsOf").value);
+    renderStep1();
+  }
+  ["inIncident", "inConfirm", "inNotify", "inAsOf"].forEach((id) => $("#" + id).addEventListener("input", onDates));
+  $("#asOfMode").addEventListener("change", (e) => {
+    S.asOfMode = e.target.value;
+    $("#asOfWrap").hidden = S.asOfMode !== "custom";
+    if (S.asOfMode === "custom" && !S.asOfCustom) { S.asOfCustom = new Date(); S.asOfCustom.setSeconds(0, 0); $("#inAsOf").value = toInputValue(S.asOfCustom); }
+    renderStep1();
+  });
+  $$('input[name="clock"]').forEach((r) => r.addEventListener("change", () => { S.clockStart = r.value; if (S.step === 1) renderStep1(); else renderCurrent(); }));
+  $$('input[name="aud"]').forEach((r) => r.addEventListener("change", () => { S.aud = r.value; renderResults(); }));
+
+  $("#btnExample").addEventListener("click", () => { loadExample(); syncInputs(); renderCurrent(); });
+  $("#btnClear").addEventListener("click", () => { clearAll(); syncInputs(); pickerBuilt = false; renderStep1(); });
+  $("#clearExample").addEventListener("click", () => { clearAll(); syncInputs(); pickerBuilt = false; go(1, true); });
+
+  $$(".step-btn").forEach((b) => b.addEventListener("click", () => go(+b.dataset.step, true)));
+  $("#to2").addEventListener("click", () => go(2, true));
+  $("#back1").addEventListener("click", () => go(1, true));
+  $("#back1b").addEventListener("click", () => go(1, true));
+  $("#to3").addEventListener("click", () => go(3, true));
+  $("#back2").addEventListener("click", () => go(2, true));
+  $("#back3").addEventListener("click", () => go(3, true));
+  $("#to4").addEventListener("click", () => go(4, true));
+
+  $("#q").addEventListener("input", (e) => { S.q = e.target.value; applySearch(); });
+  $("#pickList").addEventListener("change", (e) => {
+    const cb = e.target.closest('input[type="checkbox"]');
+    if (!cb) return;
+    if (cb.checked) S.sel.add(cb.value); else S.sel.delete(cb.value);
+    updateSelUI();
+  });
+  $("#pickList").addEventListener("toggle", (e) => {
+    const d = e.target;
+    if (d.classList && d.classList.contains("region") && !S.q) { if (d.open) S.openRegions.add(d.dataset.r); else S.openRegions.delete(d.dataset.r); }
+  }, true);
+  $("#selChips").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-rm]");
+    if (!b) return;
+    S.sel.delete(b.dataset.rm);
+    $$("#pickList .pick").forEach((l) => { if (l.dataset.id === b.dataset.rm) $("input", l).checked = false; });
+    updateSelUI();
+  });
+  $("#quick").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-q]");
+    if (!b) return;
+    if (b.dataset.q === "clear") S.sel.clear();
+    else QUICK[+b.dataset.q][1]().forEach((id) => S.sel.add(id));
+    $$("#pickList .pick").forEach((l) => { $("input", l).checked = S.sel.has(l.dataset.id); });
+    updateSelUI();
+  });
+
+  $("#countRows").addEventListener("input", (e) => {
+    const row = e.target.closest(".crow");
+    if (!row) return;
+    const v = e.target.value.trim();
+    S.counts[row.dataset.id] = v === "" ? null : Math.max(0, Math.floor(Number(v)) || 0);
+    zeroHint(row);
+  });
+  $("#applyBulk").addEventListener("click", () => {
+    const v = $("#bulk").value.trim();
+    if (v === "") return;
+    const n = Math.max(0, Math.floor(Number(v)) || 0);
+    S.sel.forEach((id) => { S.counts[id] = n; });
+    renderCounts();
+  });
+
+  $("#btnRefresh").addEventListener("click", () => renderResults());
+  $("#btnCsv").addEventListener("click", (e) => copyOut(buildCsv(), e.currentTarget));
+  $("#btnText").addEventListener("click", (e) => copyOut(buildText(), e.currentTarget));
+
+  let rz;
+  window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (S.view === "calc" && (S.step === 1 || S.step === 4)) renderCurrent(); }, 150); });
+
+
+  /* ==================================================================
+     Rules: storage, list view, editor, import/export.
+     Edits are a sparse layer of overrides on top of BASE_JURISDICTIONS.
+     Shared mode keeps them in the artifact db ("rules/<id>"); local mode
+     keeps them in this browser. A rule can always be reset to built-in.
+  ================================================================== */
+  const LOCAL_KEY = "breach-clock:rules:v1";
+  const AUD_LABEL = { reg: "Regulator", sub: "Individuals", oth: "Other party", asm: "Internal assessment" };
+  const KIND_LABEL = { asap: "As soon as possible (no fixed date)", h: "Hours", d: "Calendar days", bd: "Business days" };
+  const FROM_LABEL = { c: "Confirmation date", i: "Incident date", n: "Notification date" };
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const Store = { mode: "local", canEdit: true, db: null, dl: null, ready: false };
+
+  /* ---------- sanitising (stored data is untrusted) ---------- */
+  const clip = (v, max) => (typeof v === "string" ? v.slice(0, max) : "");
+  function cleanObl(o) {
+    if (!o || typeof o !== "object" || !AUD_SHORT[o.aud]) return null;
+    const m = /^(\d{1,4})(h|d|bd)$/.exec(o.timing);
+    if (o.timing !== "asap" && !(m && +m[1] >= 1)) return null;
+    const out = { aud: o.aud, auth: clip(o.auth, 200).trim(), basis: clip(o.basis, 200).trim(), timing: o.timing };
+    if (o.from === "i" || o.from === "n") out.from = o.from;
+    if (Number.isInteger(o.min) && o.min >= 1 && o.min <= 1e9) { out.min = o.min; if (o.harm) out.harm = true; }
+    if (typeof o.eff === "string" && DATE_RE.test(o.eff)) out.eff = o.eff;
+    if (o.vol) out.vol = true;
+    if (CONF[o.conf]) out.conf = o.conf;
+    if (typeof o.cond === "string" && o.cond.trim()) out.cond = clip(o.cond, 1500).trim();
+    return out;
+  }
+  function cleanDef(raw, id) {
+    if (!raw || typeof raw !== "object") return null;
+    const name = clip(raw.name, 120).trim();
+    if (!name || !id) return null;
+    return {
+      id, name,
+      region: REGIONS[raw.region] ? raw.region : "eo",
+      law: clip(raw.law, 200).trim() || null,
+      conf: CONF[raw.conf] ? raw.conf : "verify",
+      obl: (Array.isArray(raw.obl) ? raw.obl : []).slice(0, 20).map(cleanObl).filter(Boolean),
+      note: clip(raw.note, 1000).trim(),
+      reviewedOn: typeof raw.reviewedOn === "string" && DATE_RE.test(raw.reviewedOn) ? raw.reviewedOn : "",
+      source: clip(raw.source, 300).trim(),
+    };
+  }
+  const baseDef = (id) => cleanDef(BASE_BY_ID[id], id);
+
+  /* ---------- store ---------- */
+  let memMap = null;
+  function loadLocal() {
+    if (memMap) return memMap;
+    try { const r = localStorage.getItem(LOCAL_KEY); return r ? JSON.parse(r) || {} : {}; } catch (e) { return {}; }
+  }
+  function saveLocal(map) {
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(map)); memMap = null; Store.volatile = false; return true; }
+    catch (e) { memMap = map; Store.volatile = true; return true; }
+  }
+
+  function setOverrides(map) {
+    const ov = {};
+    Object.keys(map || {}).forEach((id) => {
+      const rec = map[id];
+      const def = rec && cleanDef(rec.def, id);
+      if (def) ov[id] = { def, updatedAt: typeof rec.updatedAt === "string" ? rec.updatedAt : "" };
+    });
+    DATA.overrides = ov;
+    rebuildData();
+    pickerBuilt = false;
+    Array.from(S.sel).forEach((id) => { if (!DATA.byId[id]) S.sel.delete(id); });
+    if (S.view === "rules") renderRules(); else renderCurrent();
+  }
+
+  const browserDownloader = {
+    save: async ({ filename, data }) => {
+      const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      return { status: "saved" };
+    },
+  };
+
+  async function storeInit() {
+    if (typeof STANDALONE !== "undefined" && STANDALONE) {
+      Store.mode = "local"; Store.dl = browserDownloader; Store.ready = true;
+      setOverrides(loadLocal());
+      renderStoreBadge();
+      return;
+    }
+    let db = null;
+    try { db = window.claude && typeof window.claude.use === "function" ? await window.claude.use("db") : null; } catch (e) { db = null; }
+    try { Store.dl = window.claude && typeof window.claude.use === "function" ? await window.claude.use("downloads") : null; } catch (e) { Store.dl = null; }
+    if (db) {
+      Store.mode = "shared"; Store.db = db;
+      try { const u = await window.claude.use("user"); if (u && typeof u.canEdit === "function") Store.canEdit = (await u.canEdit()) !== false; } catch (e) { /* keep default */ }
+      try {
+        db.collection("rules").onSnapshot(
+          (snap) => { const map = {}; snap.docs.forEach((d) => { const v = d.data(); if (v) map[d.id] = v; }); Store.ready = true; setOverrides(map); },
+          () => { Store.mode = "local"; Store.db = null; Store.canEdit = true; Store.ready = true; setOverrides(loadLocal()); }
+        );
+      } catch (e) { Store.mode = "local"; Store.db = null; Store.ready = true; setOverrides(loadLocal()); }
+    } else {
+      Store.mode = "local"; Store.ready = true;
+      setOverrides(loadLocal());
+    }
+    renderStoreBadge();
+  }
+
+  async function storeSave(id, def) {
+    const rec = { def, updatedAt: new Date().toISOString() };
+    if (Store.mode === "shared") { await Store.db.doc("rules/" + id).set(rec); return; }
+    const m = loadLocal(); m[id] = rec;
+    if (!saveLocal(m)) throw { code: "local_failed", message: "This browser would not store the change." };
+    setOverrides(m);
+  }
+  async function storeDelete(id) {
+    if (Store.mode === "shared") { await Store.db.doc("rules/" + id).delete(); return; }
+    const m = loadLocal(); delete m[id];
+    if (!saveLocal(m)) throw { code: "local_failed", message: "This browser would not store the change." };
+    setOverrides(m);
+  }
+  function errText(e) {
+    if (e && e.code === "invalid_argument") return "Only editors can change shared rules. Ask the owner for Editor access.";
+    if (e && e.code === "quota_exceeded") return "The shared store is full.";
+    return (e && e.message) || "The change could not be saved.";
+  }
+
+  function renderStoreBadge() {
+    const el = $("#storeBadge");
+    if (!el) return;
+    let txt, cls = "";
+    if (Store.mode === "shared") {
+      txt = Store.canEdit ? "Shared rules. Edits are saved to this artifact and seen by everyone who opens it." : "Shared rules, read-only for you. An editor can change them.";
+      if (!Store.canEdit) cls = "warn";
+    } else if (Store.volatile) {
+      txt = "This browser is blocking local storage, so edits last only until you close or reload the page. Export your rules to keep them.";
+      cls = "warn";
+    } else if (typeof STANDALONE !== "undefined" && STANDALONE) {
+      txt = "Edits are saved in this browser on this device. Use the backup section to move them elsewhere.";
+    } else {
+      txt = "Edits are saved in this browser only. Open the published artifact while signed in to share them.";
+      cls = "warn";
+    }
+    el.className = "store-badge " + cls;
+    el.textContent = txt;
+    $("#btnAddRule").hidden = !Store.canEdit;
+    $$("#backup [data-needs-edit]").forEach((b) => { b.disabled = !Store.canEdit; });
+  }
+
+  /* ---------- list ---------- */
+  const R = { q: "", region: "", cov: "", conf: "", edited: false, sort: "name", detail: false };
+  const REGION_RANK = Object.fromEntries(REGION_ORDER.map((k, i) => [k, i]));
+
+  function oblMs(o) {
+    if (o.timing === "asap") return Infinity;
+    const t = parseTiming(o.timing);
+    return t.n * (t.u === "h" ? HOUR : t.u === "d" ? DAY : 1.4 * DAY);
+  }
+  function fastestMs(j) { return j.obl.reduce((m, o) => Math.min(m, oblMs(o)), Infinity); }
+
+  function dutyChip(o) {
+    let t = AUD_SHORT[o.aud] + " " + timingLabel(o);
+    if (o.from === "n") t += " after notice";
+    if (o.min != null) t += " · " + (o.min > 1 && o.min % 10 === 1 ? ">" + (o.min - 1).toLocaleString() : "≥" + o.min.toLocaleString());
+    if (o.eff) t += " · from " + o.eff;
+    if (o.vol) t += " · voluntary";
+    return '<span class="chip ' + (o.aud === "sub" ? "plain" : "aud") + '">' + esc(t) + "</span>";
+  }
+
+  function ruleRow(j) {
+    const edited = !!DATA.overrides[j.id], custom = !BASE_BY_ID[j.id];
+    const duties = j.obl.length ? j.obl.map(dutyChip).join("") : '<span class="muted">No fixed deadline identified</span>';
+    const detail = R.detail && j.obl.length
+      ? '<ul class="rule-detail">' + j.obl.map((o) =>
+        "<li><b>" + esc(AUD_LABEL[o.aud]) + "</b> · " + esc(o.auth) + (o.basis ? " · " + esc(o.basis) : "") +
+        '<br><span class="muted">' + esc(ruleText(o)) + (o.cond ? ". " + esc(o.cond) : "") + "</span></li>").join("") + "</ul>"
+      : "";
+    return '<li class="rule-row" data-id="' + esc(j.id) + '">' +
+      '<div class="rc-name"><span class="nm">' + esc(j.name) + (j.id.includes("-") ? "" : '<span class="iso">' + esc(j.id) + "</span>") + '</span><span class="sm">' + esc(j.law || "No dedicated statute recorded") + "</span></div>" +
+      '<div class="rc-region">' + esc(REGIONS[j.region]) + "</div>" +
+      '<div class="rc-duties"><div class="chips">' + duties + "</div>" + detail + "</div>" +
+      '<div class="rc-status"><span class="chip ' + (j.conf === "verify" ? "verify" : "plain") + '">' + esc(CONF[j.conf].tag) + "</span>" +
+      (custom ? '<span class="chip aud">Custom</span>' : edited ? '<span class="chip aud">Edited</span>' : "") +
+      (j.reviewedOn ? '<span class="sm">Reviewed ' + esc(j.reviewedOn) + "</span>" : "") + "</div>" +
+      '<div class="rc-act"><button class="btn small" type="button" data-edit="' + esc(j.id) + '">' + (Store.canEdit ? "Edit" : "View") + "</button></div></li>";
+  }
+
+  function renderRules() {
+    renderStoreBadge();
+    const q = R.q.trim().toLowerCase();
+    let list = DATA.list.filter((j) => {
+      if (R.region && j.region !== R.region) return false;
+      if (R.cov && coverageOf(j) !== R.cov) return false;
+      if (R.conf && j.conf !== R.conf) return false;
+      if (R.edited && !DATA.overrides[j.id]) return false;
+      if (q) {
+        const hay = (j.name + " " + j.id + " " + (j.law || "") + " " + j.obl.map((o) => o.auth + " " + o.basis + " " + (o.cond || "")).join(" ")).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    const byName = (a, b) => a.name.localeCompare(b.name);
+    if (R.sort === "region") list.sort((a, b) => REGION_RANK[a.region] - REGION_RANK[b.region] || byName(a, b));
+    else if (R.sort === "fastest") list.sort((a, b) => fastestMs(a) - fastestMs(b) || byName(a, b));
+    else if (R.sort === "recent") list.sort((a, b) => ((DATA.overrides[b.id] || {}).updatedAt || "").localeCompare((DATA.overrides[a.id] || {}).updatedAt || "") || byName(a, b));
+    else list.sort(byName);
+    const nEdited = Object.keys(DATA.overrides).length;
+    $("#rulesCount").textContent = "Showing " + list.length + " of " + DATA.list.length + " jurisdictions" + (nEdited ? " · " + nEdited + " edited or custom" : "") + ".";
+    $("#rulesList").innerHTML = list.length ? list.map(ruleRow).join("") : '<li class="muted rule-empty">No jurisdictions match these filters.</li>';
+    $("#rulesList").classList.toggle("detailed", R.detail);
+  }
+
+  /* ---------- editor ---------- */
+  const ED = { d: null, orig: null, ro: false, openerSel: null, confirm: null, busy: false };
+
+  function toDraft(j, isNew) {
+    return {
+      isNew, id: j.id || "", name: j.name || "", region: j.region || "as", law: j.law || "", conf: j.conf || "verify",
+      note: j.note || "", reviewedOn: j.reviewedOn || "", source: j.source || "",
+      obl: (j.obl || []).map((o) => {
+        const t = parseTiming(o.timing);
+        return { aud: o.aud, auth: o.auth || "", basis: o.basis || "", kind: t.asap ? "asap" : t.u, n: t.asap ? "" : String(t.n), from: o.from || "c",
+          min: o.min != null ? String(o.min) : "", harm: !!o.harm, eff: o.eff || "", vol: !!o.vol, conf: o.conf || "", cond: o.cond || "" };
+      }),
+    };
+  }
+  const blankObl = () => ({ aud: "reg", auth: "", basis: "", kind: "h", n: "72", from: "c", min: "", harm: false, eff: "", vol: false, conf: "", cond: "" });
+  function oblOf(o) {
+    const out = { aud: o.aud, auth: o.auth.trim(), basis: o.basis.trim(), timing: o.kind === "asap" ? "asap" : parseInt(o.n, 10) + o.kind };
+    if (o.from !== "c") out.from = o.from;
+    if (o.min !== "") { out.min = parseInt(o.min, 10); if (o.harm) out.harm = true; }
+    if (o.eff) out.eff = o.eff;
+    if (o.vol) out.vol = true;
+    if (o.conf) out.conf = o.conf;
+    if (o.cond.trim()) out.cond = o.cond.trim();
+    return out;
+  }
+  function fromDraft(d) {
+    const id = d.isNew ? d.id.trim().toUpperCase() : d.id;
+    return cleanDef({ name: d.name, region: d.region, law: d.law, conf: d.conf, note: d.note, reviewedOn: d.reviewedOn, source: d.source, obl: d.obl.map(oblOf) }, id);
+  }
+  function validate(d) {
+    const e = {};
+    if (!d.name.trim()) e.name = "Enter a name.";
+    if (d.isNew) {
+      const id = d.id.trim().toUpperCase();
+      if (!/^[A-Z0-9_-]{2,24}$/.test(id)) e.id = "Use 2 to 24 letters, digits, hyphens or underscores.";
+      else if (DATA.byId[id]) e.id = "That code is already in use.";
+    }
+    if (d.reviewedOn && !DATE_RE.test(d.reviewedOn)) e.reviewedOn = "Use a valid date.";
+    d.obl.forEach((o, i) => {
+      if (!o.auth.trim()) e["o" + i + ".auth"] = "Name the authority or recipient.";
+      if (o.kind !== "asap") { const n = Number(o.n); if (!(o.n !== "" && Number.isInteger(n) && n >= 1 && n <= 3650)) e["o" + i + ".n"] = "Whole number, 1 to 3650."; }
+      if (o.min !== "") { const m = Number(o.min); if (!(Number.isInteger(m) && m >= 1 && m <= 1e9)) e["o" + i + ".min"] = "Whole number of 1 or more, or leave blank."; }
+      if (o.eff && !DATE_RE.test(o.eff)) e["o" + i + ".eff"] = "Use a valid date.";
+    });
+    return e;
+  }
+  function isDirty() {
+    if (!ED.d) return false;
+    if (ED.d.isNew) return true;
+    const cur = fromDraft(ED.d);
+    return JSON.stringify(cur) !== JSON.stringify(ED.orig);
+  }
+
+  const optHTML = (map, sel) => Object.keys(map).map((k) => '<option value="' + k + '"' + (k === sel ? " selected" : "") + ">" + esc(map[k]) + "</option>").join("");
+  function fld(label, control, key, hint) {
+    return '<div class="field"><label class="lbl" for="ed-' + key.replace(".", "-") + '">' + esc(label) + "</label>" + control + (hint ? '<span class="hint">' + esc(hint) + "</span>" : "") + '<span class="err" data-err="' + key + '"></span></div>';
+  }
+  const dis = () => (ED.ro ? " disabled" : "");
+
+  function oblCardHTML(o, i, total) {
+    const k = "o" + i;
+    const ctl = (f, type, extra) => '<input id="ed-' + k + "-" + f + '" data-i="' + i + '" data-f="' + f + '" type="' + type + '" value="' + esc(o[f]) + '"' + (extra || "") + dis() + ">";
+    return '<li class="obl" data-i="' + i + '"><div class="obl-head"><h5 data-title="' + i + '"></h5><span class="obl-tools">' +
+      (ED.ro ? "" : '<button type="button" class="btn small" data-act="up" data-i="' + i + '"' + (i === 0 ? " disabled" : "") + ' aria-label="Move duty up">Up</button>' +
+        '<button type="button" class="btn small" data-act="down" data-i="' + i + '"' + (i === total - 1 ? " disabled" : "") + ' aria-label="Move duty down">Down</button>' +
+        '<button type="button" class="btn small" data-act="dup" data-i="' + i + '">Duplicate</button>' +
+        '<button type="button" class="btn small danger" data-act="del" data-i="' + i + '">Remove</button>') + "</span></div>" +
+      '<div class="ed-grid">' +
+      fld("Who is told", '<select id="ed-' + k + '-aud" data-i="' + i + '" data-f="aud"' + dis() + ">" + optHTML(AUD_LABEL, o.aud) + "</select>", k + ".aud") +
+      fld("Authority or recipient", ctl("auth", "text", ' maxlength="200" placeholder="e.g. Information Commissioner"'), k + ".auth") +
+      fld("Legal basis", ctl("basis", "text", ' maxlength="200" placeholder="e.g. GDPR Art. 33"'), k + ".basis") +
+      '<div class="field"><label class="lbl" for="ed-' + k + '-kind">Deadline</label><div class="inline"><select id="ed-' + k + '-kind" data-i="' + i + '" data-f="kind"' + dis() + ">" + optHTML(KIND_LABEL, o.kind) + "</select>" +
+      '<input id="ed-' + k + '-n" data-i="' + i + '" data-f="n" data-numwrap type="number" min="1" max="3650" step="1" inputmode="numeric" value="' + esc(o.n) + '" aria-label="Number of units"' + dis() + "></div>" +
+      '<span class="err" data-err="' + k + '.n"></span></div>' +
+      fld("Clock starts from", '<select id="ed-' + k + '-from" data-i="' + i + '" data-f="from"' + dis() + ">" + optHTML(FROM_LABEL, o.from) + "</select>", k + ".from") +
+      fld("Applies from this many affected people", ctl("min", "number", ' min="1" step="1" inputmode="numeric" placeholder="Always applies"'), k + ".min", "Leave blank when there is no volume threshold.") +
+      '<div class="field check"><label><input type="checkbox" data-i="' + i + '" data-f="harm"' + (o.harm ? " checked" : "") + dis() + '> Still applies below that number if significant harm is likely</label></div>' +
+      fld("Takes effect on", ctl("eff", "date"), k + ".eff", "Leave blank if already in force.") +
+      fld("Source check for this duty", '<select id="ed-' + k + '-conf" data-i="' + i + '" data-f="conf"' + dis() + '><option value=""' + (o.conf ? "" : " selected") + ">Same as the jurisdiction</option>" + optHTML(Object.fromEntries(Object.keys(CONF).map((c) => [c, CONF[c].tag])), o.conf) + "</select>", k + ".conf") +
+      '<div class="field check"><label><input type="checkbox" data-i="' + i + '" data-f="vol"' + (o.vol ? " checked" : "") + dis() + '> Voluntary or guidance only</label></div>' +
+      '<div class="field wide"><label class="lbl" for="ed-' + k + '-cond">Conditions and notes</label><textarea id="ed-' + k + '-cond" data-i="' + i + '" data-f="cond" rows="3" maxlength="1500"' + dis() + ">" + esc(o.cond) + '</textarea></div></div>' +
+      '<p class="obl-prev" data-prev="' + i + '"></p></li>';
+  }
+
+  function editorHTML() {
+    const d = ED.d;
+    const title = d.isNew ? "New jurisdiction" : d.name || "Rule";
+    return '<div class="dr-head"><div><p class="eyebrow">' + (ED.ro ? "View rule" : d.isNew ? "Add" : "Edit rule") + '</p><h3 id="edTitle">' + esc(title) + '</h3></div><button class="btn small" type="button" data-act="close">Close</button></div>' +
+      '<div class="dr-body"><div class="msgs" id="edMsgs" aria-live="polite"></div>' +
+      '<section class="ed-sec"><h4>Jurisdiction</h4><div class="ed-grid">' +
+      fld("Name", '<input id="ed-name" data-f="name" type="text" maxlength="120" value="' + esc(d.name) + '"' + dis() + ">", "name") +
+      (d.isNew ? fld("Short code", '<input id="ed-id" data-f="id" type="text" maxlength="24" value="' + esc(d.id) + '" placeholder="e.g. QC"' + dis() + ">", "id", "Used internally. 2 to 24 letters, digits or hyphens.") : fld("Code", '<input id="ed-id" type="text" value="' + esc(d.id) + '" disabled>', "id")) +
+      fld("Region", '<select id="ed-region" data-f="region"' + dis() + ">" + optHTML(REGIONS, d.region) + "</select>", "region") +
+      fld("Source check", '<select id="ed-conf" data-f="conf"' + dis() + ">" + optHTML(Object.fromEntries(Object.keys(CONF).map((c) => [c, CONF[c].tag])), d.conf) + "</select>", "conf", "Checked: cross-checked with current sources. Established: settled law, not re-checked. Verify: recent or uncertain.") +
+      '<div class="field wide"><label class="lbl" for="ed-law">Law or regime</label><input id="ed-law" data-f="law" type="text" maxlength="200" value="' + esc(d.law) + '" placeholder="e.g. PIPEDA s. 10.1"' + dis() + "></div>" +
+      fld("Last reviewed", '<input id="ed-reviewedOn" data-f="reviewedOn" type="date" value="' + esc(d.reviewedOn) + '"' + dis() + ">", "reviewedOn") +
+      fld("Source link or citation", '<input id="ed-source" data-f="source" type="text" maxlength="300" value="' + esc(d.source) + '" placeholder="URL or citation"' + dis() + ">", "source") +
+      '<div class="field wide"><label class="lbl" for="ed-note">Notes for this jurisdiction</label><textarea id="ed-note" data-f="note" rows="2" maxlength="1000"' + dis() + ">" + esc(d.note) + "</textarea></div>" +
+      '</div></section><section class="ed-sec"><div class="ed-sec-head"><h4>Duties (<span id="edCount">' + d.obl.length + '</span>)</h4>' +
+      (ED.ro ? "" : '<button class="btn small" type="button" data-act="add">Add a duty</button>') + '</div><p class="muted">Each duty is one notice: who must be told, how fast, and when it applies. Previews use the dates from step 1' + (S.confirmation ? "." : " (no confirmation date is set, so now is used).") + '</p><ol class="obl-list" id="oblList">' +
+      (d.obl.length ? d.obl.map((o, i) => oblCardHTML(o, i, d.obl.length)).join("") : '<li class="muted">No duties. This jurisdiction will show as having no fixed deadline.</li>') + "</ol></section></div>" +
+      '<div class="dr-foot" id="edFoot"></div>';
+  }
+
+  function previewText(o, i, errs) {
+    if (Object.keys(errs).some((k) => k.startsWith("o" + i + "."))) return "Fix the marked fields to see a preview.";
+    const c = ctx(true);
+    const pc = Object.assign({}, c, { confirmation: c.confirmation || new Date() });
+    const def = cleanObl(oblOf(o));
+    if (!def) return "";
+    const r = evaluate({ id: "preview", conf: ED.d.conf }, def, pc);
+    if (r.status === "waiting") return "Starts when you notify. Set a notification date in step 1 to see it.";
+    if (def.timing === "asap") return "No fixed date. Clock starts " + fmtDT(r.trigger) + ".";
+    return "Example: due " + fmtDT(r.deadline) + (r.applicability === "pending-law" ? " (not yet in force then)." : ".");
+  }
+
+  function refreshEd() {
+    const d = ED.d, errs = validate(d), n = Object.keys(errs).length;
+    $$("#editor [data-err]").forEach((el) => { el.textContent = errs[el.dataset.err] || ""; });
+    $$("#editor [data-f]").forEach((el) => {
+      const key = el.dataset.i !== undefined ? "o" + el.dataset.i + "." + el.dataset.f : el.dataset.f;
+      if (errs[key]) el.setAttribute("aria-invalid", "true"); else el.removeAttribute("aria-invalid");
+    });
+    d.obl.forEach((o, i) => {
+      const h = $('[data-title="' + i + '"]');
+      if (h) h.textContent = "Duty " + (i + 1) + ": " + AUD_LABEL[o.aud] + " · " + (o.kind === "asap" ? "ASAP" : (o.n || "?") + " " + ({ h: "h", d: "d", bd: "bus. days" }[o.kind]));
+      const num = $("#ed-o" + i + "-n"); if (num) num.hidden = o.kind === "asap";
+      const harm = $('[data-i="' + i + '"][data-f="harm"]'); if (harm) harm.disabled = ED.ro || o.min === "";
+      const p = $('[data-prev="' + i + '"]'); if (p) p.textContent = previewText(o, i, errs);
+    });
+    $("#edTitle").textContent = d.isNew ? (d.name.trim() || "New jurisdiction") : d.name.trim() || "Rule";
+    renderFoot(n);
+  }
+
+  function renderFoot(nErr) {
+    const foot = $("#edFoot");
+    if (!foot) return;
+    const d = ED.d, dirty = isDirty();
+    const custom = !d.isNew && !BASE_BY_ID[d.id], edited = !d.isNew && !!DATA.overrides[d.id];
+    if (ED.confirm) {
+      const msg = { discard: "Discard your unsaved changes?", reset: "Reset " + d.name + " to the built-in rule? Your edits to it are removed.", del: "Delete " + d.name + " from the calculator?" }[ED.confirm];
+      const yes = { discard: "Discard changes", reset: "Reset to built-in", del: "Delete" }[ED.confirm];
+      foot.innerHTML = '<p class="confirm-msg" role="alert">' + esc(msg) + '</p><span class="actions"><button class="btn danger" type="button" data-act="confirm-yes">' + yes + '</button><button class="btn" type="button" data-act="confirm-no">Keep</button></span>';
+      return;
+    }
+    if (ED.ro) { foot.innerHTML = '<span class="muted">Read-only: only editors can change rules.</span><button class="btn" type="button" data-act="close">Close</button>'; return; }
+    foot.innerHTML =
+      '<span class="foot-left">' + (edited ? '<button class="btn" type="button" data-act="reset">Reset to built-in</button>' : "") + (custom ? '<button class="btn danger" type="button" data-act="delete">Delete</button>' : "") +
+      (nErr ? '<span class="err">' + nErr + (nErr === 1 ? " field needs" : " fields need") + " attention</span>" : dirty ? '<span class="muted">Unsaved changes</span>' : "") + "</span>" +
+      '<span class="actions"><button class="btn" type="button" data-act="cancel">Cancel</button><button class="btn primary" type="button" data-act="save"' + (nErr || !dirty || ED.busy ? " disabled" : "") + ">" + (ED.busy ? "Saving" : "Save") + "</button></span>";
+  }
+
+  function mountEditor() {
+    const host = $("#editor");
+    host.innerHTML = editorHTML();
+    refreshEd();
+  }
+
+  function openEditor(id) {
+    const isNew = !id;
+    const j = isNew ? { region: "as", conf: "verify", obl: [blankObl2()] } : DATA.byId[id];
+    if (!j) return;
+    ED.d = toDraft(j, isNew);
+    ED.orig = isNew ? null : cleanDef(j, j.id);
+    ED.ro = !Store.canEdit;
+    ED.openerSel = id ? '[data-edit="' + id + '"]' : "#btnAddRule";
+    ED.confirm = null; ED.busy = false;
+    $("#editorWrap").hidden = false;
+    document.body.classList.add("drawer-open");
+    mountEditor();
+    const first = $("#ed-name");
+    if (first) first.focus({ preventScroll: true });
+    $("#editor").scrollTop = 0;
+  }
+  function blankObl2() { return { aud: "reg", auth: "", basis: "", timing: "72h" }; }
+
+  function closeEditor(force) {
+    if (!force && ED.d && !ED.ro && isDirty()) { ED.confirm = "discard"; renderFoot(0); const b = $('[data-act="confirm-no"]'); if (b) b.focus(); return; }
+    $("#editorWrap").hidden = true;
+    document.body.classList.remove("drawer-open");
+    $("#editor").innerHTML = "";
+    ED.d = null; ED.confirm = null;
+    const back = ED.openerSel && $(ED.openerSel);
+    if (back) back.focus({ preventScroll: true });
+  }
+
+  async function saveEditor() {
+    const errs = validate(ED.d);
+    if (Object.keys(errs).length || ED.busy) return;
+    const def = fromDraft(ED.d);
+    if (!def) return;
+    ED.busy = true; refreshEd();
+    try {
+      await storeSave(def.id, def);
+      ED.busy = false;
+      closeEditor(true);
+      flashRules(def.name + " saved.");
+    } catch (e) {
+      ED.busy = false; refreshEd();
+      $("#edMsgs").innerHTML = '<p class="msg err">' + esc(errText(e)) + "</p>";
+      $("#editor").scrollTop = 0;
+    }
+  }
+  async function resetOrDelete(kind) {
+    const id = ED.d.id, name = ED.d.name;
+    try {
+      await storeDelete(id);
+      closeEditor(true);
+      flashRules(kind === "del" ? name + " deleted." : name + " reset to the built-in rule.");
+    } catch (e) {
+      ED.confirm = null; refreshEd();
+      $("#edMsgs").innerHTML = '<p class="msg err">' + esc(errText(e)) + "</p>";
+    }
+  }
+  function flashRules(text) {
+    const el = $("#rulesFlash");
+    el.textContent = text; el.hidden = false;
+    clearTimeout(flashRules.t);
+    flashRules.t = setTimeout(() => { el.hidden = true; }, 4000);
+  }
+
+  function editorClick(e) {
+    const b = e.target.closest("[data-act]");
+    if (!b || ED.busy) return;
+    const act = b.dataset.act, i = +b.dataset.i;
+    const d = ED.d;
+    if (act === "close" || act === "cancel") return closeEditor(false);
+    if (act === "save") return saveEditor();
+    if (act === "reset") { ED.confirm = "reset"; renderFoot(0); const y = $('[data-act="confirm-no"]'); if (y) y.focus(); return; }
+    if (act === "delete") { ED.confirm = "del"; renderFoot(0); const y = $('[data-act="confirm-no"]'); if (y) y.focus(); return; }
+    if (act === "confirm-no") { ED.confirm = null; refreshEd(); return; }
+    if (act === "confirm-yes") { const k = ED.confirm; if (k === "discard") return closeEditor(true); return resetOrDelete(k); }
+    if (ED.ro) return;
+    if (act === "add") { d.obl.push(blankObl()); mountEditor(); const f = $("#ed-o" + (d.obl.length - 1) + "-auth"); if (f) f.focus(); return; }
+    if (act === "del") { d.obl.splice(i, 1); mountEditor(); return; }
+    if (act === "dup") { d.obl.splice(i + 1, 0, Object.assign({}, d.obl[i])); mountEditor(); const f = $("#ed-o" + (i + 1) + "-auth"); if (f) f.focus(); return; }
+    if (act === "up" && i > 0) { [d.obl[i - 1], d.obl[i]] = [d.obl[i], d.obl[i - 1]]; mountEditor(); const f = $('[data-act="up"][data-i="' + (i - 1) + '"]'); if (f && !f.disabled) f.focus(); return; }
+    if (act === "down" && i < d.obl.length - 1) { [d.obl[i + 1], d.obl[i]] = [d.obl[i], d.obl[i + 1]]; mountEditor(); const f = $('[data-act="down"][data-i="' + (i + 1) + '"]'); if (f && !f.disabled) f.focus(); return; }
+  }
+  function editorInput(e) {
+    const t = e.target, f = t.dataset && t.dataset.f;
+    if (!f || ED.ro) return;
+    const val = t.type === "checkbox" ? t.checked : t.value;
+    if (t.dataset.i !== undefined) ED.d.obl[+t.dataset.i][f] = val; else ED.d[f] = val;
+    if (ED.confirm) ED.confirm = null;
+    refreshEd();
+  }
+  function editorKey(e) {
+    if (e.key === "Escape") { e.stopPropagation(); return closeEditor(false); }
+    if (e.key !== "Tab") return;
+    const nodes = $$("#editorWrap .drawer button:not([disabled]), #editorWrap .drawer input:not([disabled]):not([hidden]), #editorWrap .drawer select:not([disabled]), #editorWrap .drawer textarea:not([disabled])").filter((n) => n.offsetParent !== null);
+    if (!nodes.length) return;
+    const first = nodes[0], last = nodes[nodes.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  /* ---------- import / export ---------- */
+  const defOf = (j) => cleanDef(j, j.id);
+  function exportPayload(kind) {
+    const src = kind === "all" ? DATA.list : DATA.list.filter((j) => DATA.overrides[j.id]);
+    return { format: "breach-clock-rules", version: 1, exportedAt: new Date().toISOString(), scope: kind, rules: Object.fromEntries(src.map((j) => [j.id, defOf(j)])) };
+  }
+  async function doExport(kind, btn) {
+    const payload = exportPayload(kind);
+    if (!Object.keys(payload.rules).length) { setBackupMsg("There are no edited rules to export yet."); return; }
+    const text = JSON.stringify(payload, null, 2);
+    if (Store.dl) {
+      try { await Store.dl.save({ filename: "breach-clock-rules-" + kind + ".json", data: text }); setBackupMsg("Export ready."); return; }
+      catch (e) { if (e && e.code === "declined") return; }
+    }
+    copyOut(text, btn || $("#btnExportEdited"), "#backupCopy");
+    setBackupMsg("Export ready. It was copied to your clipboard, or shown below if your browser blocked copying.");
+  }
+  function setBackupMsg(t) { $("#backupMsg").textContent = t; }
+
+  let importPending = null;
+  function reviewImport(text) {
+    importPending = null;
+    const out = $("#importOut");
+    let data;
+    try { data = JSON.parse(text); } catch (e) { out.innerHTML = '<p class="msg err">That is not valid JSON.</p>'; return; }
+    let rules = data && data.rules ? data.rules : data;
+    if (Array.isArray(rules)) rules = Object.fromEntries(rules.filter((r) => r && r.id).map((r) => [r.id, r]));
+    if (!rules || typeof rules !== "object") { out.innerHTML = '<p class="msg err">No rules found in that file.</p>'; return; }
+    const ok = [], bad = [];
+    Object.keys(rules).forEach((id) => {
+      const key = String(id).toUpperCase();
+      if (!/^[A-Z0-9_-]{2,24}$/.test(key)) { bad.push(id); return; }
+      const def = cleanDef(rules[id], key);
+      if (def) ok.push(def); else bad.push(id);
+    });
+    const changed = ok.filter((def) => JSON.stringify(def) !== JSON.stringify(DATA.byId[def.id] ? defOf(DATA.byId[def.id]) : null));
+    importPending = changed;
+    out.innerHTML = '<p class="msg">' + ok.length + " valid rule" + (ok.length === 1 ? "" : "s") + " found, " + changed.length + " would change something" + (bad.length ? ". Skipped " + bad.length + " invalid: " + esc(bad.slice(0, 6).join(", ")) + (bad.length > 6 ? ", ..." : "") : "") + ".</p>" +
+      (changed.length ? '<button class="btn primary small" type="button" id="btnApplyImport"' + (Store.canEdit ? "" : " disabled") + ">Apply " + changed.length + " change" + (changed.length === 1 ? "" : "s") + "</button>" : "");
+  }
+  async function applyImport() {
+    if (!importPending || !importPending.length) return;
+    const list = importPending; importPending = null;
+    let done = 0, failed = null;
+    for (const def of list) {
+      try { await storeSave(def.id, def); done++; } catch (e) { failed = e; break; }
+    }
+    $("#importOut").innerHTML = '<p class="msg' + (failed ? " err" : "") + '">' + done + " of " + list.length + " applied." + (failed ? " " + esc(errText(failed)) : "") + "</p>";
+    if (!failed) $("#importText").value = "";
+  }
+  async function resetAllEdits() {
+    const ids = Object.keys(DATA.overrides);
+    let done = 0, failed = null;
+    for (const id of ids) { try { await storeDelete(id); done++; } catch (e) { failed = e; break; } }
+    $("#resetAllBox").hidden = true;
+    setBackupMsg(failed ? errText(failed) : done + " edited rule" + (done === 1 ? "" : "s") + " reset to built-in.");
+  }
+
+  /* ---------- wiring ---------- */
+  function showView(v) {
+    S.view = v;
+    $("#calcView").hidden = v !== "calc";
+    $("#rulesView").hidden = v !== "rules";
+    $$(".view-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
+    if (v === "rules") renderRules(); else renderCurrent();
+  }
+  function initRulesUI() {
+    $$(".view-btn").forEach((b) => b.addEventListener("click", () => { showView(b.dataset.view); const h = $(b.dataset.view === "rules" ? "#h-rules" : "#h-step" + S.step); if (h) { h.scrollIntoView({ block: "start" }); h.focus({ preventScroll: true }); } }));
+
+    const bind = (id, key, ev) => $(id).addEventListener(ev || "input", (e) => { R[key] = e.target.type === "checkbox" ? e.target.checked : e.target.value; renderRules(); });
+    bind("#rq", "q"); bind("#rRegion", "region", "change"); bind("#rCov", "cov", "change"); bind("#rConf", "conf", "change");
+    bind("#rSort", "sort", "change"); bind("#rEdited", "edited", "change"); bind("#rDetail", "detail", "change");
+    $("#rRegion").innerHTML = '<option value="">All regions</option>' + REGION_ORDER.map((k) => '<option value="' + k + '">' + esc(REGIONS[k]) + "</option>").join("");
+
+    $("#rulesList").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-edit]");
+      if (b) { openEditor(b.dataset.edit); return; }
+    });
+    $("#btnAddRule").addEventListener("click", () => openEditor(null));
+
+    const ed = $("#editor");
+    ed.addEventListener("click", editorClick);
+    ed.addEventListener("input", editorInput);
+    ed.addEventListener("change", editorInput);
+    $("#editorWrap").addEventListener("keydown", editorKey);
+    $("#editorBackdrop").addEventListener("click", () => closeEditor(false));
+
+    $("#btnExportEdited").addEventListener("click", (e) => doExport("edited", e.currentTarget));
+    $("#btnExportAll").addEventListener("click", (e) => doExport("all", e.currentTarget));
+    $("#btnReviewImport").addEventListener("click", () => reviewImport($("#importText").value));
+    $("#importFile").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => { $("#importText").value = String(rd.result || ""); reviewImport($("#importText").value); };
+      rd.readAsText(f);
+      e.target.value = "";
+    });
+    $("#importOut").addEventListener("click", (e) => { if (e.target.id === "btnApplyImport") applyImport(); });
+    $("#btnResetAll").addEventListener("click", () => {
+      if (!Object.keys(DATA.overrides).length) { setBackupMsg("Nothing has been edited."); return; }
+      $("#resetAllBox").hidden = false;
+      $("#resetAllText").textContent = "Reset " + Object.keys(DATA.overrides).length + " edited or custom rule" + (Object.keys(DATA.overrides).length === 1 ? "" : "s") + " to the built-in set? Custom jurisdictions are deleted.";
+    });
+    $("#btnResetYes").addEventListener("click", resetAllEdits);
+    $("#btnResetNo").addEventListener("click", () => { $("#resetAllBox").hidden = true; });
+  }
+
+  /* ------------------------------------------------------------------ boot */
+  $("#tzName").textContent = TZ;
+  rebuildData();
+  loadExample();
+  syncInputs();
+  initRulesUI();
+  go(1, false);
+  if (typeof STANDALONE !== "undefined" && STANDALONE) {
+    $("#noteStore").textContent = "Incident dates and affected counts are never saved or sent anywhere. Edits to the rules are stored in this browser (local storage) and nowhere else. Nothing on this page makes network requests.";
+  }
+  storeInit();
+  window.__BC = { S, DATA, Store, evaluate, evaluateAll, addTime, cleanDef, fromDraft, toDraft, validate };
+})();
+
+</script>
+</body>
+</html>
