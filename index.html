@@ -420,6 +420,116 @@ body.drawer-open { overflow: hidden; }
   .drawer { width: 100%; border-left: 0; }
 }
 
+/* ---------------- history ---------------- */
+.pane-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; width: fit-content; background: var(--surface); }
+.pane-btn { border: 0; background: var(--surface); color: var(--ink); padding: 7px 16px; cursor: pointer; font-weight: 500; }
+.pane-btn + .pane-btn { border-left: 1px solid var(--line); }
+.pane-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.pane { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+.pane > * { min-width: 0; }
+.flash.plain { background: var(--surface-2); border-color: var(--line); font-weight: 500; display: inline-flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.flash.err { background: color-mix(in srgb, var(--st-late) 12%, var(--surface)); border-color: var(--st-late); }
+.hist-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.hist { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; display: grid; gap: 6px; background: var(--surface); }
+.h-top { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.h-top time { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.h-top .nm { font-weight: 700; }
+.h-top .iso { font-family: var(--font-mono); font-size: 11px; font-weight: 400; color: var(--ink-3); margin-left: 6px; }
+.h-changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 13px; }
+.h-changes li { padding-left: 12px; position: relative; overflow-wrap: anywhere; }
+.h-changes li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); }
+.h-act { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.dr-head-actions { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ---------------- report ---------------- */
+.report { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; min-width: 0; }
+.report > * { min-width: 0; }
+.rp-head h1 { font-size: 34px; }
+.rp-sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+.rp-sec > * { min-width: 0; }
+.rp-sec h2 { font-size: 22px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.rp-sec ul { margin: 0; padding-left: 20px; display: grid; gap: 3px; }
+.rp-dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 18px; }
+.rp-dl dt { color: var(--ink-3); }
+.rp-dl dd { margin: 0; font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.tbl-wrap { overflow-x: auto; }
+.rp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rp-table th { text-align: left; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); padding: 6px 10px; border-bottom: 2px solid var(--line); }
+.rp-table td { padding: 8px 10px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+.rp-table .muted { font-size: 12px; }
+.rp-table .small-text { font-size: 11.5px; }
+.rp-table .nowrap { white-space: nowrap; }
+.rp-table.narrow { max-width: 720px; }
+.rp-table.fixed td:nth-child(2) { width: 12%; }
+.rp-table.fixed td:nth-child(3) { width: 16%; }
+.rp-table.fixed td:nth-child(4) { width: 36%; }
+.rp-table.fixed td:nth-child(5) { width: 17%; }
+
+@media print {
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+    --bg: #ffffff; --surface: #ffffff; --surface-2: #eef1f6; --ink: #111b2a; --ink-2: #33415a; --ink-3: #5b6a80;
+    --line: #c9d1de; --line-2: #dde3ec; --accent: #2a4bd3; --accent-ink: #ffffff; --accent-soft: #e2e8fb;
+    --st-late: #c0281f; --st-critical: #d2540a; --st-urgent: #b88200; --st-soon: #4d8813; --st-later: #1a7d53;
+    --st-distant: #2872a3; --st-met: #0e7a68; --st-info: #5b6a80; --st-pending: #7867a8;
+    color-scheme: light;
+  }
+  @page { margin: 14mm; }
+  body { background: #fff; color: #111b2a; font-size: 11pt; }
+  .masthead, .banner, #calcView, #rulesView, #editorWrap, .notice, .no-print { display: none !important; }
+  #reportView { display: block !important; border: 0; padding: 0; background: #fff; }
+  .app { max-width: none; padding: 0; }
+  .report { gap: 16px; }
+  .rp-sec { break-inside: auto; }
+  .rp-sec h2 { break-after: avoid; }
+  .rp-table tr, .tile, .tl-wrap { break-inside: avoid; }
+  .chip, .tile, .tl svg, .legend i { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .tl-scroll { overflow: visible; }
+  .report .tl svg { width: 100%; height: auto; }
+  .tl-foot { display: none; }
+  .tbl-wrap { overflow: visible; }
+  .rp-table { font-size: 9.5pt; }
+}
+@media (max-width: 560px) {
+  .rp-head h1 { font-size: 28px; }
+  .rp-dl { grid-template-columns: 1fr; gap: 0 18px; }
+  .rp-dl dd { margin-bottom: 6px; }
+}
+
+/* ---------------- proposals and review ---------------- */
+.prop-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.prop { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 8px; background: var(--surface); }
+.p-top { display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; }
+.p-title { font-size: 16px; }
+.p-desc { margin: 0; }
+.rv { display: grid; gap: 14px; min-width: 0; }
+.rv-head { display: grid; gap: 8px; justify-items: start; min-width: 0; }
+.rv-head h3 { font-size: 24px; }
+.rv-bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.rv-publish { width: 100%; }
+.rv-publish ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; display: grid; gap: 3px; }
+.rv-body { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 16px; align-items: start; }
+.rv-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rv-item { width: 100%; text-align: left; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; }
+.rv-item .nm { font-weight: 700; flex: 1 1 100%; overflow-wrap: anywhere; }
+.rv-item.on { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.rv-detail { display: grid; gap: 12px; min-width: 0; }
+.rv-detail h4 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 600; }
+.rv-detail h4 .iso { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); font-weight: 400; }
+.rv-detail h5 { margin: 0; font-size: 14px; }
+.rv-table td.rv-new { background: color-mix(in srgb, var(--st-met) 10%, transparent); }
+.rv-table td.rv-cur { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.rv-table tr.rv-conflict td:first-child { box-shadow: inset 3px 0 0 var(--st-urgent); }
+.rv-opt { display: flex; gap: 6px; align-items: center; cursor: pointer; white-space: nowrap; }
+.rv-opt input { accent-color: var(--accent); }
+.rv-result { display: grid; gap: 6px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 8px; }
+.rv-actions { align-items: center; }
+.import-detail { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; font-size: 13px; }
+.propose-form { display: grid; gap: 10px; width: 100%; }
+.dr-foot.stack { display: grid; }
+@media (max-width: 860px) {
+  .rv-body { grid-template-columns: minmax(0, 1fr); }
+}
+
 </style>
 </head>
 <body>
@@ -434,6 +544,7 @@ body.drawer-open { overflow: hidden; }
       <div class="view-switch" role="group" aria-label="View">
         <button class="view-btn" type="button" data-view="calc" aria-pressed="true">Calculator</button>
         <button class="view-btn" type="button" data-view="rules" aria-pressed="false">Rules</button>
+        <button class="view-btn" type="button" data-view="report" aria-pressed="false">Report</button>
       </div>
       <p class="mast-note">A planning aid, not legal advice. Dates are computed from a reference dataset that needs review by counsel before you rely on it.</p>
     </div>
@@ -587,6 +698,7 @@ body.drawer-open { overflow: hidden; }
         </fieldset>
         <span class="actions">
           <button class="btn small" id="btnRefresh" type="button">Recalculate from now</button>
+          <button class="btn small" id="btnOpenReport" type="button">Open report</button>
           <button class="btn small" id="btnCsv" type="button">Copy as CSV</button>
           <button class="btn small" id="btnText" type="button">Copy as text</button>
         </span>
@@ -621,6 +733,13 @@ body.drawer-open { overflow: hidden; }
       <p id="storeBadge" class="store-badge"></p>
     </header>
 
+    <div class="pane-switch" role="group" aria-label="Rules or history">
+      <button class="pane-btn" type="button" id="paneRules" aria-pressed="true">Rules</button>
+      <button class="pane-btn" type="button" id="paneProposals" aria-pressed="false">Proposals</button>
+      <button class="pane-btn" type="button" id="paneHistory" aria-pressed="false">History</button>
+    </div>
+
+    <div id="rulesPane" class="pane">
     <div class="rules-tools">
       <div class="field grow">
         <label class="lbl" for="rq">Search</label>
@@ -672,6 +791,68 @@ body.drawer-open { overflow: hidden; }
         <div id="importOut"></div>
       </div>
     </details>
+    </div><!-- /rulesPane -->
+
+    <div id="proposalsPane" class="pane" hidden>
+      <p class="muted">Proposed rule changes wait here until an editor reviews them one rule at a time. Approving a change does not alter the live rules. Publishing does.</p>
+      <div class="rules-bar">
+        <label class="inline-check"><input type="checkbox" id="pReqReview"> Require review before rules change</label>
+        <span id="pPolicyNote" class="muted"></span>
+      </div>
+      <div id="propListView">
+        <div class="rules-tools">
+          <div class="field"><label class="lbl" for="pFilter">Show</label><select id="pFilter"><option value="open">Open proposals</option><option value="done">Finished</option><option value="all">All</option></select></div>
+          <button class="btn small" id="btnImportToProposal" type="button">Import a proposal or rules file</button>
+        </div>
+        <p id="propCount" class="muted" aria-live="polite"></p>
+        <p id="propFlash" class="flash" role="status" hidden></p>
+        <ul class="prop-list" id="propItems"></ul>
+        <p id="propMsg" class="muted" aria-live="polite"></p>
+        <div id="propCopy"></div>
+      </div>
+      <div id="propReview" hidden></div>
+    </div>
+
+    <div id="historyPane" class="pane" hidden>
+      <p class="muted">Every edit, reset, import and restore is logged here with what changed. Restore puts a rule back to the version before a change, and that is logged too.</p>
+      <div class="rules-tools">
+        <div class="field grow"><label class="lbl" for="hq">Search history</label><input id="hq" type="search" placeholder="Jurisdiction, code or change text" autocomplete="off"></div>
+        <div class="field"><label class="lbl" for="hAction">Change type</label><select id="hAction"></select></div>
+      </div>
+      <p id="hFilterNote" class="flash plain" hidden><span id="hFilterText"></span> <button class="btn small" id="hFilterClear" type="button">Show all</button></p>
+      <p id="histCount" class="muted" aria-live="polite"></p>
+      <p id="histFlash" class="flash" role="status" hidden></p>
+      <ul class="hist-list" id="historyList"></ul>
+      <div class="actions">
+        <button class="btn small" id="btnExportHist" type="button">Export history (CSV)</button>
+        <button class="btn small danger" id="btnClearHist" type="button">Clear history</button>
+      </div>
+      <div id="clearHistBox" class="confirm-box" hidden>
+        <p role="alert">Delete the whole history log? Rules are not changed, but you will no longer be able to restore earlier versions.</p>
+        <span class="actions"><button class="btn danger small" id="btnClearHistYes" type="button">Delete history</button><button class="btn small" id="btnClearHistNo" type="button">Keep it</button></span>
+      </div>
+      <p id="histMsg" class="muted" aria-live="polite"></p>
+      <div id="histCopy"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="reportView" aria-labelledby="h-report" hidden>
+    <header class="no-print">
+      <h2 id="h-report" tabindex="-1">Report</h2>
+      <p>A one-document summary of your dates, deadlines, affected counts, rules and assumptions, for your records or for counsel.</p>
+    </header>
+    <div class="toolbar no-print">
+      <span class="actions">
+        <button class="btn primary small" id="btnPrint" type="button">Print or save as PDF</button>
+        <button class="btn small" id="btnSaveReport" type="button">Save as HTML file</button>
+        <button class="btn small" id="btnReportText" type="button">Copy as text</button>
+      </span>
+      <button class="btn small" id="btnReportBack" type="button">Back to deadlines</button>
+    </div>
+    <p id="printHint" class="muted no-print" hidden>Printing is not available inside this viewer. Save the report as an HTML file, then open it in a browser to read it or print it.</p>
+    <p id="reportMsg" class="muted no-print" aria-live="polite"></p>
+    <div id="reportCopy" class="no-print"></div>
+    <article id="reportDoc" class="report"></article>
   </section>
 
   <div id="editorWrap" hidden>
@@ -1320,6 +1501,13 @@ function fromInputValue(v) {
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const REGION_ORDER = ["eu", "eo", "na", "la", "as", "oc", "me", "af"];
+
+  /* Local date and time for file names, e.g. 2026-10-18_143205 */
+  function fileStamp(d) {
+    d = d || new Date();
+    const p = (n) => String(n).padStart(2, "0");
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "_" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+  }
 
   /* Live dataset = built-in rules with edits layered on top (see rules.js). */
   const DATA = { list: [], byId: {}, overrides: {} };
@@ -2030,12 +2218,13 @@ function fromInputValue(v) {
     rebuildData();
     pickerBuilt = false;
     Array.from(S.sel).forEach((id) => { if (!DATA.byId[id]) S.sel.delete(id); });
-    if (S.view === "rules") renderRules(); else renderCurrent();
+    if (S.view === "rules") { renderRules(); renderHistoryIfVisible(); } else if (S.view === "report") renderReport(); else renderCurrent();
   }
 
   const browserDownloader = {
     save: async ({ filename, data }) => {
-      const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+      const mime = /\.csv$/i.test(filename) ? "text/csv" : /\.html?$/i.test(filename) ? "text/html" : "application/json";
+      const url = URL.createObjectURL(new Blob([data], { type: mime }));
       const a = document.createElement("a");
       a.href = url; a.download = filename;
       document.body.appendChild(a); a.click(); a.remove();
@@ -2047,7 +2236,10 @@ function fromInputValue(v) {
   async function storeInit() {
     if (typeof STANDALONE !== "undefined" && STANDALONE) {
       Store.mode = "local"; Store.dl = browserDownloader; Store.ready = true;
+      setHistFromLocal();
+      propApplyLocal();
       setOverrides(loadLocal());
+      renderHistoryIfVisible();
       renderStoreBadge();
       return;
     }
@@ -2056,7 +2248,16 @@ function fromInputValue(v) {
     try { Store.dl = window.claude && typeof window.claude.use === "function" ? await window.claude.use("downloads") : null; } catch (e) { Store.dl = null; }
     if (db) {
       Store.mode = "shared"; Store.db = db;
-      try { const u = await window.claude.use("user"); if (u && typeof u.canEdit === "function") Store.canEdit = (await u.canEdit()) !== false; } catch (e) { /* keep default */ }
+      try {
+        const u = await window.claude.use("user");
+        if (u) {
+          Store.user = u;
+          if (typeof u.canEdit === "function") Store.canEdit = (await u.canEdit()) !== false;
+          if (typeof u.id === "function") Store.userId = (await u.id()) || "";
+        }
+      } catch (e) { /* keep defaults */ }
+      histSubscribe(db);
+      propSubscribe(db);
       try {
         db.collection("rules").onSnapshot(
           (snap) => { const map = {}; snap.docs.forEach((d) => { const v = d.data(); if (v) map[d.id] = v; }); Store.ready = true; setOverrides(map); },
@@ -2065,7 +2266,10 @@ function fromInputValue(v) {
       } catch (e) { Store.mode = "local"; Store.db = null; Store.ready = true; setOverrides(loadLocal()); }
     } else {
       Store.mode = "local"; Store.ready = true;
+      setHistFromLocal();
+      propApplyLocal();
       setOverrides(loadLocal());
+      renderHistoryIfVisible();
     }
     renderStoreBadge();
   }
@@ -2094,8 +2298,9 @@ function fromInputValue(v) {
     if (!el) return;
     let txt, cls = "";
     if (Store.mode === "shared") {
-      txt = Store.canEdit ? "Shared rules. Edits are saved to this artifact and seen by everyone who opens it." : "Shared rules, read-only for you. An editor can change them.";
-      if (!Store.canEdit) cls = "warn";
+      if (!Store.canEdit) { txt = "Shared rules. Your changes are submitted as proposals for an editor to review."; cls = "warn"; }
+      else if (mustReview()) txt = "Shared rules. Changes go through review: propose, approve, then publish.";
+      else txt = "Shared rules. Edits are saved to this artifact and seen by everyone who opens it.";
     } else if (Store.volatile) {
       txt = "This browser is blocking local storage, so edits last only until you close or reload the page. Export your rules to keep them.";
       cls = "warn";
@@ -2107,8 +2312,10 @@ function fromInputValue(v) {
     }
     el.className = "store-badge " + cls;
     el.textContent = txt;
-    $("#btnAddRule").hidden = !Store.canEdit;
-    $$("#backup [data-needs-edit]").forEach((b) => { b.disabled = !Store.canEdit; });
+    const add = $("#btnAddRule");
+    add.hidden = false;
+    add.textContent = canDirect() ? "Add a jurisdiction" : "Propose a jurisdiction";
+    $$("#backup [data-needs-edit]").forEach((b) => { b.disabled = !canDirect(); });
   }
 
   /* ---------- list ---------- */
@@ -2146,7 +2353,7 @@ function fromInputValue(v) {
       '<div class="rc-status"><span class="chip ' + (j.conf === "verify" ? "verify" : "plain") + '">' + esc(CONF[j.conf].tag) + "</span>" +
       (custom ? '<span class="chip aud">Custom</span>' : edited ? '<span class="chip aud">Edited</span>' : "") +
       (j.reviewedOn ? '<span class="sm">Reviewed ' + esc(j.reviewedOn) + "</span>" : "") + "</div>" +
-      '<div class="rc-act"><button class="btn small" type="button" data-edit="' + esc(j.id) + '">' + (Store.canEdit ? "Edit" : "View") + "</button></div></li>";
+      '<div class="rc-act"><button class="btn small" type="button" data-edit="' + esc(j.id) + '">' + "Edit" + "</button></div></li>";
   }
 
   function renderRules() {
@@ -2261,7 +2468,7 @@ function fromInputValue(v) {
   function editorHTML() {
     const d = ED.d;
     const title = d.isNew ? "New jurisdiction" : d.name || "Rule";
-    return '<div class="dr-head"><div><p class="eyebrow">' + (ED.ro ? "View rule" : d.isNew ? "Add" : "Edit rule") + '</p><h3 id="edTitle">' + esc(title) + '</h3></div><button class="btn small" type="button" data-act="close">Close</button></div>' +
+    return '<div class="dr-head"><div><p class="eyebrow">' + (d.isNew ? (canDirect() ? "Add" : "Propose") : canDirect() ? "Edit rule" : "Propose a change") + '</p><h3 id="edTitle">' + esc(title) + '</h3></div><span class="dr-head-actions">' + (d.isNew ? "" : '<button class="btn small" type="button" data-act="history">History</button>') + '<button class="btn small" type="button" data-act="close">Close</button></span></div>' +
       '<div class="dr-body"><div class="msgs" id="edMsgs" aria-live="polite"></div>' +
       '<section class="ed-sec"><h4>Jurisdiction</h4><div class="ed-grid">' +
       fld("Name", '<input id="ed-name" data-f="name" type="text" maxlength="120" value="' + esc(d.name) + '"' + dis() + ">", "name") +
@@ -2312,18 +2519,29 @@ function fromInputValue(v) {
     const foot = $("#edFoot");
     if (!foot) return;
     const d = ED.d, dirty = isDirty();
+    const direct = canDirect();
     const custom = !d.isNew && !BASE_BY_ID[d.id], edited = !d.isNew && !!DATA.overrides[d.id];
+    if (ED.confirm && ED.confirm.startsWith("propose")) {
+      const nm = d.name.trim() || "rule";
+      const def = ED.confirm === "propose-reset" ? "Reset " + nm : ED.confirm === "propose-del" ? "Delete " + nm : (d.isNew ? "Add " : "Update ") + nm;
+      foot.classList.add("stack");
+      foot.innerHTML = proposeFormHTML(def);
+      return;
+    }
+    foot.classList.remove("stack");
     if (ED.confirm) {
       const msg = { discard: "Discard your unsaved changes?", reset: "Reset " + d.name + " to the built-in rule? Your edits to it are removed.", del: "Delete " + d.name + " from the calculator?" }[ED.confirm];
       const yes = { discard: "Discard changes", reset: "Reset to built-in", del: "Delete" }[ED.confirm];
       foot.innerHTML = '<p class="confirm-msg" role="alert">' + esc(msg) + '</p><span class="actions"><button class="btn danger" type="button" data-act="confirm-yes">' + yes + '</button><button class="btn" type="button" data-act="confirm-no">Keep</button></span>';
       return;
     }
-    if (ED.ro) { foot.innerHTML = '<span class="muted">Read-only: only editors can change rules.</span><button class="btn" type="button" data-act="close">Close</button>'; return; }
-    foot.innerHTML =
-      '<span class="foot-left">' + (edited ? '<button class="btn" type="button" data-act="reset">Reset to built-in</button>' : "") + (custom ? '<button class="btn danger" type="button" data-act="delete">Delete</button>' : "") +
-      (nErr ? '<span class="err">' + nErr + (nErr === 1 ? " field needs" : " fields need") + " attention</span>" : dirty ? '<span class="muted">Unsaved changes</span>' : "") + "</span>" +
-      '<span class="actions"><button class="btn" type="button" data-act="cancel">Cancel</button><button class="btn primary" type="button" data-act="save"' + (nErr || !dirty || ED.busy ? " disabled" : "") + ">" + (ED.busy ? "Saving" : "Save") + "</button></span>";
+    const left = (edited ? '<button class="btn" type="button" data-act="' + (direct ? "reset" : "preset") + '">' + (direct ? "Reset to built-in" : "Propose reset") + "</button>" : "") +
+      (custom ? '<button class="btn danger" type="button" data-act="' + (direct ? "delete" : "pdel") + '">' + (direct ? "Delete" : "Propose deletion") + "</button>" : "");
+    const status = nErr ? '<span class="err">' + nErr + (nErr === 1 ? " field needs" : " fields need") + " attention</span>" : dirty ? '<span class="muted">Unsaved changes</span>' : "";
+    const primary = direct
+      ? '<button class="btn primary" type="button" data-act="save"' + (nErr || !dirty || ED.busy ? " disabled" : "") + ">" + (ED.busy ? "Saving" : "Save") + "</button>"
+      : '<button class="btn primary" type="button" data-act="propose"' + (nErr || !dirty || ED.busy ? " disabled" : "") + ">Propose change</button>";
+    foot.innerHTML = '<span class="foot-left">' + left + status + '</span><span class="actions"><button class="btn" type="button" data-act="cancel">Cancel</button>' + primary + "</span>";
   }
 
   function mountEditor() {
@@ -2338,7 +2556,7 @@ function fromInputValue(v) {
     if (!j) return;
     ED.d = toDraft(j, isNew);
     ED.orig = isNew ? null : cleanDef(j, j.id);
-    ED.ro = !Store.canEdit;
+    ED.ro = false;
     ED.openerSel = id ? '[data-edit="' + id + '"]' : "#btnAddRule";
     ED.confirm = null; ED.busy = false;
     $("#editorWrap").hidden = false;
@@ -2367,7 +2585,7 @@ function fromInputValue(v) {
     if (!def) return;
     ED.busy = true; refreshEd();
     try {
-      await storeSave(def.id, def);
+      await commitRule(def.id, def, ED.d.isNew ? "create" : "edit");
       ED.busy = false;
       closeEditor(true);
       flashRules(def.name + " saved.");
@@ -2380,7 +2598,7 @@ function fromInputValue(v) {
   async function resetOrDelete(kind) {
     const id = ED.d.id, name = ED.d.name;
     try {
-      await storeDelete(id);
+      await commitRule(id, null, kind === "del" ? "delete" : "reset");
       closeEditor(true);
       flashRules(kind === "del" ? name + " deleted." : name + " reset to the built-in rule.");
     } catch (e) {
@@ -2401,11 +2619,20 @@ function fromInputValue(v) {
     const act = b.dataset.act, i = +b.dataset.i;
     const d = ED.d;
     if (act === "close" || act === "cancel") return closeEditor(false);
+    if (act === "history") { const rid = d.id; closeEditor(false); if (!ED.d) showHistoryFor(rid); return; }
     if (act === "save") return saveEditor();
     if (act === "reset") { ED.confirm = "reset"; renderFoot(0); const y = $('[data-act="confirm-no"]'); if (y) y.focus(); return; }
     if (act === "delete") { ED.confirm = "del"; renderFoot(0); const y = $('[data-act="confirm-no"]'); if (y) y.focus(); return; }
     if (act === "confirm-no") { ED.confirm = null; refreshEd(); return; }
     if (act === "confirm-yes") { const k = ED.confirm; if (k === "discard") return closeEditor(true); return resetOrDelete(k); }
+    if (act === "propose" || act === "preset" || act === "pdel") {
+      ED.confirm = act === "propose" ? "propose" : act === "preset" ? "propose-reset" : "propose-del";
+      ED.form = null; renderFoot(0);
+      const t = $("#pfTitle"); if (t) { t.focus(); t.select(); }
+      return;
+    }
+    if (act === "propose-back") { ED.confirm = null; refreshEd(); return; }
+    if (act === "propose-go") return proposeFromEditor(ED.confirm === "propose-reset" ? "reset" : ED.confirm === "propose-del" ? "del" : "edit");
     if (ED.ro) return;
     if (act === "add") { d.obl.push(blankObl()); mountEditor(); const f = $("#ed-o" + (d.obl.length - 1) + "-auth"); if (f) f.focus(); return; }
     if (act === "del") { d.obl.splice(i, 1); mountEditor(); return; }
@@ -2441,12 +2668,9 @@ function fromInputValue(v) {
     const payload = exportPayload(kind);
     if (!Object.keys(payload.rules).length) { setBackupMsg("There are no edited rules to export yet."); return; }
     const text = JSON.stringify(payload, null, 2);
-    if (Store.dl) {
-      try { await Store.dl.save({ filename: "breach-clock-rules-" + kind + ".json", data: text }); setBackupMsg("Export ready."); return; }
-      catch (e) { if (e && e.code === "declined") return; }
-    }
-    copyOut(text, btn || $("#btnExportEdited"), "#backupCopy");
-    setBackupMsg("Export ready. It was copied to your clipboard, or shown below if your browser blocked copying.");
+    const r = await deliverText("breach-clock-rules-" + kind + "_" + fileStamp() + ".json", text, btn || $("#btnExportEdited"), "#backupCopy");
+    if (r === "declined") return;
+    setBackupMsg(r === "saved" ? "Export ready." : "Export ready. It was copied to your clipboard, or shown below if your browser blocked copying.");
   }
   function setBackupMsg(t) { $("#backupMsg").textContent = t; }
 
@@ -2456,27 +2680,63 @@ function fromInputValue(v) {
     const out = $("#importOut");
     let data;
     try { data = JSON.parse(text); } catch (e) { out.innerHTML = '<p class="msg err">That is not valid JSON.</p>'; return; }
-    let rules = data && data.rules ? data.rules : data;
-    if (Array.isArray(rules)) rules = Object.fromEntries(rules.filter((r) => r && r.id).map((r) => [r.id, r]));
-    if (!rules || typeof rules !== "object") { out.innerHTML = '<p class="msg err">No rules found in that file.</p>'; return; }
-    const ok = [], bad = [];
-    Object.keys(rules).forEach((id) => {
-      const key = String(id).toUpperCase();
-      if (!/^[A-Z0-9_-]{2,24}$/.test(key)) { bad.push(id); return; }
-      const def = cleanDef(rules[id], key);
-      if (def) ok.push(def); else bad.push(id);
-    });
-    const changed = ok.filter((def) => JSON.stringify(def) !== JSON.stringify(DATA.byId[def.id] ? defOf(DATA.byId[def.id]) : null));
-    importPending = changed;
-    out.innerHTML = '<p class="msg">' + ok.length + " valid rule" + (ok.length === 1 ? "" : "s") + " found, " + changed.length + " would change something" + (bad.length ? ". Skipped " + bad.length + " invalid: " + esc(bad.slice(0, 6).join(", ")) + (bad.length > 6 ? ", ..." : "") : "") + ".</p>" +
-      (changed.length ? '<button class="btn primary small" type="button" id="btnApplyImport"' + (Store.canEdit ? "" : " disabled") + ">Apply " + changed.length + " change" + (changed.length === 1 ? "" : "s") + "</button>" : "");
+    const bad = [];
+    let items = [], meta = { title: "", description: "", author: "", source: "import" }, isProposal = false;
+
+    if (data && data.format === "breach-clock-proposal" && Array.isArray(data.items)) {
+      isProposal = true;
+      meta = { title: clip(data.title, 160), description: clip(data.description, 1500), author: clip(data.author, 100), source: "file" };
+      const p = cleanProposal({ title: "x", items: data.items }, "x");
+      items = p ? p.items : [];
+      if (!items.length) { out.innerHTML = '<p class="msg err">That proposal file has no valid rules.</p>'; return; }
+    } else {
+      let rules = data && data.rules ? data.rules : data;
+      if (Array.isArray(rules)) rules = Object.fromEntries(rules.filter((r) => r && r.id).map((r) => [r.id, r]));
+      if (!rules || typeof rules !== "object") { out.innerHTML = '<p class="msg err">No rules found in that file.</p>'; return; }
+      Object.keys(rules).forEach((id) => {
+        const key = String(id).toUpperCase();
+        if (!RID_RE.test(key)) { bad.push(id); return; }
+        const def = cleanDef(rules[id], key);
+        if (!def) { bad.push(id); return; }
+        const cur = curDef(key);
+        if (same(def, cur)) return;
+        items.push({ rid: key, name: def.name, base: cur, proposed: def });
+      });
+      if (!items.length) { out.innerHTML = '<p class="msg">Nothing to import: every rule already matches' + (bad.length ? ". Skipped " + bad.length + " invalid: " + esc(bad.slice(0, 6).join(", ")) : "") + ".</p>"; return; }
+    }
+    importPending = { items, meta, isProposal };
+    const detail = items.map((it) => {
+      const lines = diffDefs(it.base, it.proposed);
+      const cur = curDef(it.rid);
+      const moved = it.base && cur && !same(it.base, cur);
+      return "<li><b>" + esc(it.name) + "</b> <span class=\"muted\">(" + itemKind(it).toLowerCase() + (moved ? ", the live rule has changed since" : "") + ")</span><ul class=\"h-changes\">" + lines.slice(0, 4).map((l) => "<li>" + esc(l) + "</li>").join("") + (lines.length > 4 ? "<li class=\"muted\">and " + (lines.length - 4) + " more</li>" : "") + "</ul></li>";
+    }).join("");
+    const defaultTitle = meta.title || "Imported rules (" + items.length + ")";
+    out.innerHTML = '<p class="msg">' + (isProposal ? "Proposal file" + (meta.author ? " from " + esc(meta.author) : "") + ": " : "") + items.length + " rule" + (items.length === 1 ? "" : "s") + " would change" + (bad.length ? ". Skipped " + bad.length + " invalid: " + esc(bad.slice(0, 6).join(", ")) + (bad.length > 6 ? ", ..." : "") : "") + ". Nothing changes until it is reviewed" + (canDirect() ? " or you apply it directly" : "") + '.</p>' +
+      '<details class="more" open><summary>What would change</summary><ul class="import-detail">' + detail + "</ul></details>" +
+      '<div class="propose-form"><div class="field"><label class="lbl" for="impTitle">Proposal title</label><input id="impTitle" type="text" maxlength="160" value="' + esc(defaultTitle) + '"></div>' +
+      (Store.mode === "shared" || isProposal ? "" : '<div class="field"><label class="lbl" for="impAuthor">Proposed by</label><input id="impAuthor" type="text" maxlength="100" value="' + esc(savedAuthor()) + '" placeholder="Your name"></div>') +
+      '<span class="actions"><button class="btn primary small" type="button" id="btnStageImport">Stage as proposal</button>' +
+      (canDirect() ? '<button class="btn small" type="button" id="btnApplyImport">Apply ' + items.length + " change" + (items.length === 1 ? "" : "s") + " now</button>" : "") + "</span></div>";
+  }
+  async function stageImport() {
+    if (!importPending) return;
+    const { items, meta, isProposal } = importPending;
+    const title = $("#impTitle") ? $("#impTitle").value : meta.title;
+    const author = isProposal ? meta.author : Store.mode === "shared" ? Store.userId || "" : authorForNew($("#impAuthor") ? $("#impAuthor").value : "");
+    try {
+      await submitProposal(title, meta.description, items, meta.source, author);
+      importPending = null;
+      $("#importText").value = "";
+      $("#importOut").innerHTML = '<p class="msg">Staged as a proposal. Nothing has changed yet. <button class="btn small" type="button" id="btnGoProposals">Open proposals</button></p>';
+    } catch (e) { $("#importOut").insertAdjacentHTML("afterbegin", '<p class="msg err">' + esc(errText(e)) + "</p>"); }
   }
   async function applyImport() {
-    if (!importPending || !importPending.length) return;
-    const list = importPending; importPending = null;
+    if (!importPending || !canDirect()) return;
+    const list = importPending.items.filter((it) => it.proposed); importPending = null;
     let done = 0, failed = null;
-    for (const def of list) {
-      try { await storeSave(def.id, def); done++; } catch (e) { failed = e; break; }
+    for (const it of list) {
+      try { await commitRule(it.rid, it.proposed, "import"); done++; } catch (e) { failed = e; break; }
     }
     $("#importOut").innerHTML = '<p class="msg' + (failed ? " err" : "") + '">' + done + " of " + list.length + " applied." + (failed ? " " + esc(errText(failed)) : "") + "</p>";
     if (!failed) $("#importText").value = "";
@@ -2484,7 +2744,7 @@ function fromInputValue(v) {
   async function resetAllEdits() {
     const ids = Object.keys(DATA.overrides);
     let done = 0, failed = null;
-    for (const id of ids) { try { await storeDelete(id); done++; } catch (e) { failed = e; break; } }
+    for (const id of ids) { try { await commitRule(id, null, BASE_BY_ID[id] ? "reset" : "delete"); done++; } catch (e) { failed = e; break; } }
     $("#resetAllBox").hidden = true;
     setBackupMsg(failed ? errText(failed) : done + " edited rule" + (done === 1 ? "" : "s") + " reset to built-in.");
   }
@@ -2494,11 +2754,14 @@ function fromInputValue(v) {
     S.view = v;
     $("#calcView").hidden = v !== "calc";
     $("#rulesView").hidden = v !== "rules";
+    $("#reportView").hidden = v !== "report";
     $$(".view-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
-    if (v === "rules") renderRules(); else renderCurrent();
+    if (v === "rules") { renderRules(); renderHistoryIfVisible(); }
+    else if (v === "report") renderReport();
+    else renderCurrent();
   }
   function initRulesUI() {
-    $$(".view-btn").forEach((b) => b.addEventListener("click", () => { showView(b.dataset.view); const h = $(b.dataset.view === "rules" ? "#h-rules" : "#h-step" + S.step); if (h) { h.scrollIntoView({ block: "start" }); h.focus({ preventScroll: true }); } }));
+    $$(".view-btn").forEach((b) => b.addEventListener("click", () => { showView(b.dataset.view); const h = $(b.dataset.view === "rules" ? "#h-rules" : b.dataset.view === "report" ? "#h-report" : "#h-step" + S.step); if (h) { h.scrollIntoView({ block: "start" }); h.focus({ preventScroll: true }); } }));
 
     const bind = (id, key, ev) => $(id).addEventListener(ev || "input", (e) => { R[key] = e.target.type === "checkbox" ? e.target.checked : e.target.value; renderRules(); });
     bind("#rq", "q"); bind("#rRegion", "region", "change"); bind("#rCov", "cov", "change"); bind("#rConf", "conf", "change");
@@ -2529,7 +2792,7 @@ function fromInputValue(v) {
       rd.readAsText(f);
       e.target.value = "";
     });
-    $("#importOut").addEventListener("click", (e) => { if (e.target.id === "btnApplyImport") applyImport(); });
+    $("#importOut").addEventListener("click", (e) => { if (e.target.id === "btnApplyImport") applyImport(); else if (e.target.id === "btnStageImport") stageImport(); else if (e.target.id === "btnGoProposals") { showPane("proposals"); $("#proposalsPane").scrollIntoView({ block: "start" }); } });
     $("#btnResetAll").addEventListener("click", () => {
       if (!Object.keys(DATA.overrides).length) { setBackupMsg("Nothing has been edited."); return; }
       $("#resetAllBox").hidden = false;
@@ -2539,18 +2802,1077 @@ function fromInputValue(v) {
     $("#btnResetNo").addEventListener("click", () => { $("#resetAllBox").hidden = true; });
   }
 
+  /* ==================================================================
+     Rule history: every change to a rule is logged with a readable diff
+     and the full before/after definition, so any change can be restored.
+     Shared mode keeps entries in the artifact db ("history/<id>"); local
+     mode keeps them in this browser.
+  ================================================================== */
+  const LOCAL_HIST_KEY = "breach-clock:history:v1";
+  const HIST_CAP = 1000;
+  const ACTION_LABEL = { edit: "Edited", create: "Created", reset: "Reset to built-in", delete: "Deleted", import: "Imported", restore: "Restored", publish: "Published" };
+  const Hist = { list: [], q: "", action: "", rid: "", confirm: null, names: {}, busy: false };
+  let histMem = null;
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+  function cleanEntry(raw, eid) {
+    if (!raw || typeof raw !== "object" || !ACTION_LABEL[raw.action] || typeof raw.ts !== "string") return null;
+    const rid = clip(raw.rid, 40);
+    if (!rid || !eid) return null;
+    return {
+      eid, ts: raw.ts.slice(0, 40), action: raw.action, rid, name: clip(raw.name, 120), by: clip(raw.by, 80),
+      before: raw.before ? cleanDef(raw.before, rid) : null,
+      after: raw.after ? cleanDef(raw.after, rid) : null,
+      changes: (Array.isArray(raw.changes) ? raw.changes : []).slice(0, 80).map((c) => clip(c, 500)),
+      ref: clip(raw.ref, 160),
+    };
+  }
+
+  /* ---------- diff ---------- */
+  const JFIELDS = { name: "Name", region: "Region", law: "Law", conf: "Source check", note: "Notes", reviewedOn: "Last reviewed", source: "Source" };
+  const OFIELDS = { aud: "who is told", auth: "authority", basis: "legal basis", timing: "deadline", from: "clock starts from", min: "volume threshold", harm: "applies below threshold if harm likely", eff: "takes effect", vol: "voluntary", conf: "source check", cond: "conditions" };
+  const OFDEF = { from: "c", min: null, harm: false, eff: "", vol: false, conf: "", cond: "", basis: "" };
+
+  function trunc(v, n) { v = String(v); return v.length > n ? v.slice(0, n - 1) + "…" : v; }
+  function fmtJ(k, v) {
+    if (v === null || v === undefined || v === "") return "(none)";
+    if (k === "region") return REGIONS[v] || v;
+    if (k === "conf") return CONF[v] ? CONF[v].tag : v;
+    return "“" + trunc(v, 90) + "”";
+  }
+  function fmtO(k, v) {
+    if (v === null || v === undefined || v === "") return "(none)";
+    if (k === "aud") return AUD_LABEL[v] || v;
+    if (k === "from") return FROM_LABEL[v] || v;
+    if (k === "conf") return CONF[v] ? CONF[v].tag : v;
+    if (k === "timing") { if (v === "asap") return "as soon as possible"; const t = parseTiming(v); return t.n + " " + ({ h: "hour", d: "day", bd: "business day" }[t.u]) + (t.n === 1 ? "" : "s"); }
+    if (k === "min") return Number(v).toLocaleString();
+    if (typeof v === "boolean") return v ? "yes" : "no";
+    return "“" + trunc(v, 90) + "”";
+  }
+  function oblDiff(a, b, label) {
+    const out = [];
+    Object.keys(OFIELDS).forEach((k) => {
+      const x = a[k] === undefined ? OFDEF[k] : a[k], y = b[k] === undefined ? OFDEF[k] : b[k];
+      if (x !== y) out.push(label + " " + OFIELDS[k] + ": " + fmtO(k, x) + " → " + fmtO(k, y));
+    });
+    return out;
+  }
+  const dutyName = (o) => AUD_LABEL[o.aud] + " · " + (o.auth || "no authority") + " · " + fmtO("timing", o.timing);
+  function diffDefs(a, b) {
+    if (!a && b) return ["Created " + b.name + (b.obl.length ? " with " + b.obl.length + (b.obl.length === 1 ? " duty" : " duties") : "")];
+    if (a && !b) return ["Deleted " + a.name];
+    if (!a && !b) return [];
+    const out = [];
+    Object.keys(JFIELDS).forEach((k) => {
+      if ((a[k] || "") !== (b[k] || "")) out.push(JFIELDS[k] + ": " + fmtJ(k, a[k]) + " → " + fmtJ(k, b[k]));
+    });
+    const key = (o) => JSON.stringify(o);
+    if (a.obl.length === b.obl.length) {
+      a.obl.forEach((o, i) => { out.push(...oblDiff(o, b.obl[i], "Duty " + (i + 1) + " (" + AUD_LABEL[b.obl[i].aud] + ")")); });
+    } else {
+      const poolB = b.obl.map((o, i) => ({ o, i, k: key(o), used: false }));
+      const removed = [];
+      a.obl.forEach((o) => {
+        const m = poolB.find((p) => !p.used && p.k === key(o));
+        if (m) m.used = true; else removed.push(o);
+      });
+      const added = poolB.filter((p) => !p.used);
+      const score = (x, y) => Object.keys(OFIELDS).filter((k) => (x[k] === undefined ? OFDEF[k] : x[k]) === (y[k] === undefined ? OFDEF[k] : y[k])).length;
+      const lines = [];
+      removed.forEach((o) => {
+        let best = null;
+        added.forEach((p) => { if (p.paired) return; const sc = score(o, p.o); if (sc >= 6 && (!best || sc > best.sc)) best = { p, sc }; });
+        if (best) { best.p.paired = true; lines.push({ i: best.p.i, text: oblDiff(o, best.p.o, "Duty " + (best.p.i + 1) + " (" + AUD_LABEL[best.p.o.aud] + ")") }); }
+        else lines.push({ i: -1, text: ["Removed duty: " + dutyName(o)] });
+      });
+      added.forEach((p) => { if (!p.paired) lines.push({ i: p.i, text: ["Added duty " + (p.i + 1) + ": " + dutyName(p.o)] }); });
+      lines.sort((x, y) => x.i - y.i).forEach((l) => out.push(...l.text));
+    }
+    return out;
+  }
+
+  /* ---------- storage ---------- */
+  function loadHist() {
+    if (histMem) return histMem;
+    try { const r = localStorage.getItem(LOCAL_HIST_KEY); const a = r ? JSON.parse(r) : []; return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  }
+  function saveHist(arr) {
+    try { localStorage.setItem(LOCAL_HIST_KEY, JSON.stringify(arr)); histMem = null; return true; }
+    catch (e) { histMem = arr; Store.volatile = true; return false; }
+  }
+  function setHistFromLocal() {
+    Hist.list = loadHist().map((x) => cleanEntry(x, x && x.eid)).filter(Boolean);
+  }
+  function histSubscribe(db) {
+    try {
+      db.collection("history").orderBy("ts", "desc").limit(HIST_CAP).onSnapshot(
+        (snap) => { Hist.list = snap.docs.map((d) => cleanEntry(d.data(), d.id)).filter(Boolean); resolveNames(); renderHistoryIfVisible(); },
+        () => { /* history is optional: keep working without it */ }
+      );
+    } catch (e) { /* ignore */ }
+  }
+
+  async function historyAdd(e) {
+    const doc = { ts: new Date().toISOString(), action: e.action, rid: e.rid, name: e.name, by: Store.userId || "", before: e.before, after: e.after, changes: e.changes, ref: e.ref || "" };
+    const eid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    if (Store.mode === "shared") { await Store.db.collection("history").doc(eid).set(doc); return; }
+    const arr = loadHist();
+    arr.unshift(Object.assign({ eid }, doc));
+    if (arr.length > HIST_CAP) arr.length = HIST_CAP;
+    saveHist(arr);
+    setHistFromLocal();
+    renderHistoryIfVisible();
+  }
+  async function historyClear() {
+    if (Store.mode === "shared") {
+      const snap = await Store.db.collection("history").get();
+      for (const d of snap.docs) await Store.db.collection("history").doc(d.id).delete();
+      return;
+    }
+    saveHist([]); Hist.list = []; renderHistoryIfVisible();
+  }
+
+  /* ---------- commit: the one path every rule change goes through ---------- */
+  async function commitRule(id, def, action, ref) {
+    const cur = DATA.byId[id] ? cleanDef(DATA.byId[id], id) : null;
+    const base = BASE_BY_ID[id] ? baseDef(id) : null;
+    if (def && base && same(def, base)) { def = null; if (action === "edit") action = "reset"; }
+    const next = def || base;
+    if (same(cur, next)) {
+      if (!def && DATA.overrides[id]) await storeDelete(id);
+      return;
+    }
+    if (def) await storeSave(id, def); else await storeDelete(id);
+    const changes = diffDefs(cur, next);
+    if (!changes.length) return;
+    try { await historyAdd({ action, rid: id, name: (next || cur).name, before: cur, after: next, changes, ref }); } catch (e) { /* the rule change itself succeeded */ }
+  }
+
+  async function restoreEntry(entry) {
+    await commitRule(entry.rid, entry.before, "restore");
+  }
+
+  /* ---------- view ---------- */
+  async function resolveNames() {
+    if (!Store.user || typeof Store.user.profiles !== "function") return;
+    const all = Hist.list.map((e) => e.by).concat(Prop.list.map((p) => p.author), Object.keys(Prop.reviews).map((k) => Prop.reviews[k].by), Object.keys(Prop.reviews).map((k) => Prop.reviews[k].publishedBy));
+    const ids = Array.from(new Set(all.filter((i) => /^u_/.test(i || "")))).filter((i) => !(i in Hist.names));
+    if (!ids.length) return;
+    try {
+      const ps = await Store.user.profiles(ids);
+      ids.forEach((i) => { Hist.names[i] = (ps[i] && ps[i].name) || ""; });
+      renderHistoryIfVisible();
+      renderProposalsIfVisible();
+    } catch (e) { /* names are optional */ }
+  }
+  function whoLabel(id) {
+    if (!id) return Store.mode === "local" ? "this browser" : "";
+    if (id === Store.userId) return "you";
+    return Hist.names[id] || "an editor";
+  }
+  const byLabel = (e) => whoLabel(e.by);
+  function renderHistoryIfVisible() {
+    const n = Hist.list.length;
+    const btn = $("#paneHistory");
+    if (btn) btn.textContent = "History" + (n ? " (" + n + ")" : "");
+    if (S.view === "rules" && !$("#historyPane").hidden) renderHistory();
+  }
+  const chipFor = (a) => '<span class="chip ' + ({ delete: "verify", create: "aud", restore: "aud", publish: "aud" }[a] || "plain") + '">' + esc(ACTION_LABEL[a]) + "</span>";
+
+  function histRow(e) {
+    const cur = DATA.byId[e.rid] ? cleanDef(DATA.byId[e.rid], e.rid) : null;
+    const isCurrent = same(cur, e.before);
+    const outOfDate = !same(cur, e.after);
+    const lines = e.changes;
+    const shown = lines.slice(0, 4).map((c) => "<li>" + esc(c) + "</li>").join("");
+    const rest = lines.length > 4 ? '<details class="more"><summary>' + (lines.length - 4) + " more change" + (lines.length - 4 === 1 ? "" : "s") + '</summary><ul class="h-changes">' + lines.slice(4).map((c) => "<li>" + esc(c) + "</li>").join("") + "</ul></details>" : "";
+    let actions = "";
+    if (Store.canEdit) {
+      if (Hist.confirm === e.eid) {
+        actions = '<p class="confirm-msg" role="alert">Restore ' + esc(e.before ? e.before.name : e.name) + (e.before ? " to the version before this change?" : " by removing it?") + (outOfDate && cur ? " It has changed since, and those later changes will be replaced." : "") + '</p><span class="actions"><button class="btn danger small" type="button" data-hact="restore-yes" data-eid="' + esc(e.eid) + '"' + (Hist.busy ? " disabled" : "") + '>Restore</button><button class="btn small" type="button" data-hact="restore-no">Keep current</button></span>';
+      } else {
+        actions = '<button class="btn small" type="button" data-hact="restore" data-eid="' + esc(e.eid) + '"' + (isCurrent ? " disabled" : "") + ">" + (isCurrent ? "Already current" : e.before ? "Restore the version before" : "Remove this jurisdiction") + "</button>";
+      }
+    }
+    const who = byLabel(e);
+    return '<li class="hist" data-eid="' + esc(e.eid) + '"><div class="h-top"><time datetime="' + esc(e.ts) + '">' + esc(fmtDT(new Date(e.ts))) + "</time>" + chipFor(e.action) +
+      '<span class="nm">' + esc(e.name) + (e.rid.includes("-") ? "" : '<span class="iso">' + esc(e.rid) + "</span>") + "</span>" + (who ? '<span class="muted">by ' + esc(who) + "</span>" : "") + (e.ref ? '<span class="muted">via proposal \u201C' + esc(e.ref) + "\u201D</span>" : "") + "</div>" +
+      '<ul class="h-changes">' + shown + "</ul>" + rest + '<div class="h-act">' + actions + (DATA.byId[e.rid] ? '<button class="btn small" type="button" data-hact="open" data-rid="' + esc(e.rid) + '">Open rule</button>' : "") + "</div></li>";
+  }
+
+  function renderHistory() {
+    const q = Hist.q.trim().toLowerCase();
+    const list = Hist.list.filter((e) => {
+      if (Hist.rid && e.rid !== Hist.rid) return false;
+      if (Hist.action && e.action !== Hist.action) return false;
+      if (q && !(e.name + " " + e.rid + " " + e.changes.join(" ")).toLowerCase().includes(q)) return false;
+      return true;
+    });
+    $("#histCount").textContent = Hist.list.length ? "Showing " + list.length + " of " + Hist.list.length + " change" + (Hist.list.length === 1 ? "" : "s") + ", newest first." : "";
+    const note = $("#hFilterNote");
+    note.hidden = !Hist.rid;
+    if (Hist.rid) $("#hFilterText").textContent = "Showing history for " + ((DATA.byId[Hist.rid] || {}).name || Hist.rid) + ".";
+    $("#historyList").innerHTML = list.length ? list.map(histRow).join("")
+      : '<li class="muted rule-empty">' + (Hist.list.length ? "No changes match these filters." : "No changes yet. Edits, resets, imports and restores will be logged here.") + "</li>";
+    $("#btnExportHist").disabled = !Hist.list.length;
+    $("#btnClearHist").hidden = !Store.canEdit;
+    $("#btnClearHist").disabled = !Hist.list.length;
+  }
+
+  function showPane(p) {
+    $("#rulesPane").hidden = p !== "rules";
+    $("#proposalsPane").hidden = p !== "proposals";
+    $("#historyPane").hidden = p !== "history";
+    ["rules", "proposals", "history"].forEach((k) => $("#pane" + k[0].toUpperCase() + k.slice(1)).setAttribute("aria-pressed", String(k === p)));
+    if (p === "history") renderHistory();
+    else if (p === "proposals") renderProposals();
+  }
+  function showHistoryFor(rid) {
+    Hist.rid = rid || "";
+    showPane("history");
+  }
+
+  function histCsv() {
+    const rows = [["Time", "Change", "Jurisdiction", "Code", "By", "Details"]].concat(Hist.list.map((e) => [
+      fmtDT(new Date(e.ts)), ACTION_LABEL[e.action], e.name, e.rid, byLabel(e), e.changes.join(" | "),
+    ]));
+    return rows.map((r) => r.map(csvCell).join(",")).join("\n");
+  }
+
+  function initHistoryUI() {
+    $("#paneRules").addEventListener("click", () => showPane("rules"));
+    $("#paneHistory").addEventListener("click", () => { Hist.rid = ""; showPane("history"); });
+    $("#hq").addEventListener("input", (e) => { Hist.q = e.target.value; renderHistory(); });
+    $("#hAction").addEventListener("change", (e) => { Hist.action = e.target.value; renderHistory(); });
+    $("#hFilterClear").addEventListener("click", () => { Hist.rid = ""; renderHistory(); });
+    $("#hAction").innerHTML = '<option value="">All changes</option>' + Object.keys(ACTION_LABEL).map((k) => '<option value="' + k + '">' + esc(ACTION_LABEL[k]) + "</option>").join("");
+
+    $("#historyList").addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-hact]");
+      if (!b) return;
+      const act = b.dataset.hact;
+      if (act === "open") { showPane("rules"); openEditor(b.dataset.rid); return; }
+      if (act === "restore") { Hist.confirm = b.dataset.eid; renderHistory(); const y = $('[data-hact="restore-no"]'); if (y) y.focus(); return; }
+      if (act === "restore-no") { Hist.confirm = null; renderHistory(); return; }
+      if (act === "restore-yes") {
+        const entry = Hist.list.find((x) => x.eid === b.dataset.eid);
+        if (!entry) return;
+        Hist.busy = true; renderHistory();
+        try { await restoreEntry(entry); flashHist("Restored " + (entry.before ? entry.before.name : entry.name) + "."); }
+        catch (err) { flashHist(errText(err), true); }
+        Hist.busy = false; Hist.confirm = null; renderHistory();
+      }
+    });
+
+    $("#btnExportHist").addEventListener("click", async (e) => {
+      const r = await deliverText("breach-clock-history_" + fileStamp() + ".csv", histCsv(), e.currentTarget, "#histCopy");
+      if (r !== "declined") $("#histMsg").textContent = r === "saved" ? "History saved." : "History copied, or shown below if your browser blocked copying.";
+    });
+    $("#btnClearHist").addEventListener("click", () => { $("#clearHistBox").hidden = false; $("#btnClearHistYes").focus(); });
+    $("#btnClearHistNo").addEventListener("click", () => { $("#clearHistBox").hidden = true; });
+    $("#btnClearHistYes").addEventListener("click", async () => {
+      try { await historyClear(); $("#histMsg").textContent = "History cleared."; } catch (err) { $("#histMsg").textContent = errText(err); }
+      $("#clearHistBox").hidden = true;
+    });
+  }
+  function flashHist(text, isErr) {
+    const el = $("#histFlash");
+    el.textContent = text; el.hidden = false; el.classList.toggle("err", !!isErr);
+    clearTimeout(flashHist.t);
+    flashHist.t = setTimeout(() => { el.hidden = true; }, 4500);
+  }
+
+  /* ==================================================================
+     Proposals: stage rule changes, review them one rule at a time with a
+     three-way view (base / proposed / current), and publish separately.
+     Shared mode keeps them in the artifact db:
+       proposals/<pid>        what is being proposed (contributors write)
+       reviews/d_<pid>__<rid> one decision per rule (editors write)
+       settings/policy        { requireReview } (editors write)
+     Local mode keeps everything in this browser; proposals move between
+     people as exported files.
+  ================================================================== */
+  const LOCAL_PROP_KEY = "breach-clock:proposals:v1";
+  const AUTHOR_KEY = "breach-clock:author";
+  const Prop = { list: [], reviews: {}, policy: null, pmap: {}, rmap: {}, openId: null, sel: null, choices: {}, note: "", filter: "open", confirm: null, busy: false, form: null };
+  let propMem = null;
+
+  function fp(v) {
+    const s = JSON.stringify(v === undefined ? null : v);
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(36) + s.length.toString(36);
+  }
+  const curDef = (rid) => (DATA.byId[rid] ? cleanDef(DATA.byId[rid], rid) : null);
+  const RID_RE = /^[A-Za-z0-9_-]{2,24}$/;
+  const mustReview = () => (Prop.policy === null ? Store.mode === "shared" : Prop.policy);
+  const canDirect = () => Store.canEdit && !mustReview();
+  const isId = (v) => /^u_/.test(v || "");
+
+  /* ---------- sanitising (stored data is untrusted) ---------- */
+  function cleanProposal(raw, pid) {
+    if (!raw || typeof raw !== "object" || !pid) return null;
+    const seen = new Map();
+    (Array.isArray(raw.items) ? raw.items : []).slice(0, 200).forEach((it) => {
+      if (!it || typeof it !== "object") return;
+      const rid = clip(it.rid, 40);
+      if (!RID_RE.test(rid)) return;
+      const base = it.base ? cleanDef(it.base, rid) : null;
+      const proposed = it.proposed ? cleanDef(it.proposed, rid) : null;
+      if (!base && !proposed) return;
+      seen.set(rid, { rid, name: clip(it.name, 120) || (proposed || base).name, base, proposed });
+    });
+    const items = Array.from(seen.values());
+    if (!items.length) return null;
+    return {
+      pid, items, hash: fp(items),
+      title: clip(raw.title, 160).trim() || "Untitled proposal",
+      description: clip(raw.description, 1500).trim(),
+      author: clip(raw.author, 100),
+      createdAt: typeof raw.createdAt === "string" ? raw.createdAt.slice(0, 40) : "",
+      source: ["editor", "import", "file"].includes(raw.source) ? raw.source : "editor",
+    };
+  }
+  function cleanReview(raw, id) {
+    if (!raw || typeof raw !== "object" || !id) return null;
+    if (raw.status !== "approved" && raw.status !== "rejected") return null;
+    const rid = clip(raw.rid, 40), pid = clip(raw.pid, 60);
+    if (!pid || !RID_RE.test(rid)) return null;
+    const choices = {};
+    if (raw.choices && typeof raw.choices === "object") {
+      Object.keys(raw.choices).slice(0, 100).forEach((k) => { if (raw.choices[k] === "theirs" || raw.choices[k] === "current") choices[clip(k, 40)] = raw.choices[k]; });
+    }
+    return {
+      id, pid, rid, status: raw.status, by: clip(raw.by, 80), at: clip(raw.at, 40), note: clip(raw.note, 1000), hash: clip(raw.hash, 40),
+      resolved: raw.resolved ? cleanDef(raw.resolved, rid) : null, choices, currentFp: clip(raw.currentFp, 40),
+      published: !!raw.published, publishedAt: clip(raw.publishedAt, 40), publishedBy: clip(raw.publishedBy, 80),
+    };
+  }
+
+  /* ---------- storage ---------- */
+  function propLocalGet() {
+    if (propMem) return propMem;
+    try { const r = localStorage.getItem(LOCAL_PROP_KEY); const o = r ? JSON.parse(r) : {}; return { proposals: o.proposals || {}, reviews: o.reviews || {}, policy: o.policy || null }; }
+    catch (e) { return { proposals: {}, reviews: {}, policy: null }; }
+  }
+  function propLocalSave(o) {
+    try { localStorage.setItem(LOCAL_PROP_KEY, JSON.stringify(o)); propMem = null; return true; }
+    catch (e) { propMem = o; Store.volatile = true; return false; }
+  }
+  function propRecompute() {
+    Prop.list = Object.keys(Prop.pmap).map((id) => cleanProposal(Prop.pmap[id], id)).filter(Boolean).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const rv = {};
+    Object.keys(Prop.rmap).forEach((id) => { const r = cleanReview(Prop.rmap[id], id); if (r) rv[id] = r; });
+    Prop.reviews = rv;
+    Prop.policy = Prop.rawPolicy && typeof Prop.rawPolicy.requireReview === "boolean" ? Prop.rawPolicy.requireReview : null;
+    if (Prop.openId && !Prop.list.some((p) => p.pid === Prop.openId)) { Prop.openId = null; Prop.sel = null; }
+    renderProposalsIfVisible();
+    updateEditorGate();
+  }
+  function propApplyLocal() {
+    const o = propLocalGet();
+    Prop.pmap = o.proposals; Prop.rmap = o.reviews; Prop.rawPolicy = o.policy;
+    propRecompute();
+  }
+  function propSubscribe(db) {
+    const safe = (fn) => { try { fn(); } catch (e) { /* proposals are optional: the rest keeps working */ } };
+    safe(() => db.collection("proposals").orderBy("createdAt", "desc").limit(200).onSnapshot((snap) => { const m = {}; snap.docs.forEach((d) => { m[d.id] = d.data(); }); Prop.pmap = m; propRecompute(); resolveNames(); }, () => {}));
+    safe(() => db.collection("reviews").limit(1000).onSnapshot((snap) => { const m = {}; snap.docs.forEach((d) => { m[d.id] = d.data(); }); Prop.rmap = m; propRecompute(); resolveNames(); }, () => {}));
+    safe(() => db.doc("settings/policy").onSnapshot((snap) => { Prop.rawPolicy = snap.exists ? snap.data() : null; propRecompute(); }, () => {}));
+  }
+
+  async function propSave(doc) {
+    const pid = "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    if (Store.mode === "shared") { await Store.db.collection("proposals").doc(pid).set(doc); return pid; }
+    const o = propLocalGet(); o.proposals[pid] = doc; propLocalSave(o); propApplyLocal();
+    return pid;
+  }
+  async function propDelete(pid) {
+    if (Store.mode === "shared") {
+      await Store.db.collection("proposals").doc(pid).delete();
+      if (Store.canEdit) { for (const id of Object.keys(Prop.reviews).filter((k) => Prop.reviews[k].pid === pid)) { try { await Store.db.collection("reviews").doc(id).delete(); } catch (e) { /* leftover reviews are ignored */ } } }
+      return;
+    }
+    const o = propLocalGet(); delete o.proposals[pid];
+    Object.keys(o.reviews).forEach((k) => { if (o.reviews[k].pid === pid) delete o.reviews[k]; });
+    propLocalSave(o); propApplyLocal();
+  }
+  async function reviewPut(rv) {
+    const id = "d_" + rv.pid + "__" + rv.rid;
+    const doc = Object.assign({}, rv); delete doc.id;
+    if (Store.mode === "shared") { await Store.db.collection("reviews").doc(id).set(doc); return; }
+    const o = propLocalGet(); o.reviews[id] = doc; propLocalSave(o); propApplyLocal();
+  }
+  async function reviewDel(pid, rid) {
+    const id = "d_" + pid + "__" + rid;
+    if (Store.mode === "shared") { await Store.db.collection("reviews").doc(id).delete(); return; }
+    const o = propLocalGet(); delete o.reviews[id]; propLocalSave(o); propApplyLocal();
+  }
+  async function policySet(v) {
+    if (Store.mode === "shared") { await Store.db.doc("settings/policy").set({ requireReview: v }); return; }
+    const o = propLocalGet(); o.policy = { requireReview: v }; propLocalSave(o); propApplyLocal();
+  }
+
+  /* ---------- proposing ---------- */
+  function authorForNew(typed) {
+    if (Store.mode === "shared") return Store.userId || "";
+    const a = clip(typed, 100).trim();
+    try { if (a) localStorage.setItem(AUTHOR_KEY, a); } catch (e) { /* convenience only */ }
+    return a;
+  }
+  function savedAuthor() { try { return localStorage.getItem(AUTHOR_KEY) || ""; } catch (e) { return ""; } }
+
+  async function submitProposal(title, description, items, source, authorOverride) {
+    const doc = {
+      title: clip(title, 160).trim() || "Untitled proposal", description: clip(description, 1500).trim(),
+      author: authorOverride !== undefined ? authorOverride : authorForNew(""), createdAt: new Date().toISOString(), source: source || "editor",
+      items: items.map((it) => ({ rid: it.rid, name: it.name, base: it.base, proposed: it.proposed })),
+    };
+    if (!cleanProposal(doc, "check")) throw { code: "empty", message: "There is nothing to propose." };
+    if (Store.mode === "shared" && JSON.stringify(doc).length > 230000) throw { code: "too_large", message: "This proposal is too large to store as one. Split it into smaller files of about 60 rules each." };
+    return propSave(doc);
+  }
+  function slugify(t) {
+    const slug = String(t || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40).replace(/-+$/, "");
+    return slug || "untitled";
+  }
+  function proposalFile(p) {
+    return { format: "breach-clock-proposal", version: 1, title: p.title, description: p.description, author: isId(p.author) ? whoLabel(p.author) : p.author, createdAt: p.createdAt, items: p.items.map((it) => ({ rid: it.rid, name: it.name, base: it.base, proposed: it.proposed })) };
+  }
+
+  /* ==================================================================
+     Three-way merge of one rule: base (when the proposal was drafted),
+     theirs (the proposal) and current (the live rule).
+  ================================================================== */
+  const JF = Object.keys(JFIELDS), OF = Object.keys(OFIELDS);
+  const nv = (v) => (v === null || v === undefined ? "" : v);
+  const ov = (o, k) => (o[k] === undefined ? OFDEF[k] : o[k]);
+  const ruleSummary = (d) => (d ? d.name + " (" + d.obl.length + (d.obl.length === 1 ? " duty)" : " duties)") : "(none)");
+
+  function alignDuties(a, b) {
+    const map = new Array(a.length).fill(-1), used = new Set();
+    const ka = a.map((o) => JSON.stringify(o)), kb = b.map((o) => JSON.stringify(o));
+    a.forEach((o, i) => {
+      let j = kb[i] === ka[i] && !used.has(i) ? i : kb.findIndex((k, jj) => k === ka[i] && !used.has(jj));
+      if (j >= 0) { map[i] = j; used.add(j); }
+    });
+    const score = (x, y) => OF.filter((k) => ov(x, k) === ov(y, k)).length;
+    a.forEach((o, i) => {
+      if (map[i] >= 0) return;
+      let best = -1, bs = -1;
+      b.forEach((p, j) => { if (used.has(j)) return; const sc = score(o, p) + (j === i ? 0.5 : 0); if (sc >= 6 && sc > bs) { bs = sc; best = j; } });
+      if (best >= 0) { map[i] = best; used.add(best); }
+    });
+    return { map, added: b.map((_, j) => j).filter((j) => !used.has(j)) };
+  }
+
+  function merge3(base, theirs, cur, id) {
+    const ruleRow = (label, bs, ts, cs, take) => ({ key: "rule", kind: "rule", label, bs, ts, cs, take });
+    const done = (rows, clean, buildFn) => ({ rows, clean, build: buildFn, conflicts: rows.filter((r) => r.take === "conflict").map((r) => r.key) });
+    const pick = (row, choices, unresolved) => {
+      if (row.take === "theirs" || row.take === "same") return "theirs";
+      if (row.take === "current") return "current";
+      const ch = choices[row.key];
+      if (ch === "theirs" || ch === "current") return ch;
+      unresolved.push(row.key);
+      return "current";
+    };
+
+    /* a whole rule is added, removed or already gone */
+    if (!theirs) {
+      if (!cur) return done([], true, () => ({ def: null, unresolved: [] }));
+      const r = ruleRow("Delete this jurisdiction", ruleSummary(base), "(deleted)", ruleSummary(cur), base && same(cur, base) ? "theirs" : "conflict");
+      return done([r], r.take !== "conflict", (ch) => {
+        const u = []; const side = pick(r, ch || {}, u);
+        return { def: side === "theirs" ? null : cur, unresolved: u };
+      });
+    }
+    if (!cur && base) {
+      const r = ruleRow("The rule was deleted after this proposal was drafted", ruleSummary(base), ruleSummary(theirs), "(deleted)", "conflict");
+      return done([r], false, (ch) => { const u = []; const side = pick(r, ch || {}, u); return { def: side === "theirs" ? theirs : null, unresolved: u }; });
+    }
+
+    const b = base || { id, name: "", region: "", law: null, conf: "", note: "", reviewedOn: "", source: "", obl: [] };
+    const c = cur || b;
+    const clean = !cur || same(cur, b);
+    const rows = [];
+    const mk = (key, label, bv, tv, cv, show, kind) => {
+      const row = { key, label, kind: kind || "field", base: bv, theirs: tv, current: cv, bs: show(bv), ts: show(tv), cs: show(cv) };
+      row.take = same(tv, cv) ? "same" : same(tv, bv) ? "current" : same(cv, bv) ? "theirs" : "conflict";
+      return row;
+    };
+
+    JF.forEach((k) => {
+      const bv = nv(b[k]), tv = nv(theirs[k]), cv = nv(c[k]);
+      if (tv === bv && cv === bv) return;
+      rows.push(mk("f:" + k, JFIELDS[k], bv, tv, cv, (v) => fmtJ(k, v === "" ? null : v)));
+    });
+
+    const aT = alignDuties(b.obl, theirs.obl), aC = alignDuties(b.obl, c.obl);
+    const info = [];
+    b.obl.forEach((bo, bi) => {
+      const ti = aT.map[bi], ci = aC.map[bi];
+      const name = "Duty " + (bi + 1) + " · " + AUD_LABEL[bo.aud] + " · " + (bo.auth || "no authority");
+      const inf = { ti, ci, rows: {} };
+      if (ti >= 0 && ci >= 0) {
+        OF.forEach((k) => {
+          const bv = ov(bo, k), tv = ov(theirs.obl[ti], k), cv = ov(c.obl[ci], k);
+          if (bv === tv && bv === cv) return;
+          const row = mk("d:" + bi + ":" + k, name + " — " + OFIELDS[k], bv, tv, cv, (v) => fmtO(k, v));
+          inf.rows[k] = row; rows.push(row);
+        });
+      } else if (ti < 0 && ci >= 0) {
+        const row = { key: "d:" + bi + ":remove", kind: "duty", label: name + " — removed", bs: dutyName(bo), ts: "(removed)", cs: dutyName(c.obl[ci]), take: same(c.obl[ci], bo) ? "theirs" : "conflict" };
+        inf.rows.remove = row; rows.push(row);
+      } else if (ci < 0 && ti >= 0) {
+        const row = { key: "d:" + bi + ":remove", kind: "duty", label: name + " — removed in the current rule", bs: dutyName(bo), ts: dutyName(theirs.obl[ti]), cs: "(removed)", take: same(theirs.obl[ti], bo) ? "current" : "conflict" };
+        inf.rows.remove = row; rows.push(row);
+      }
+      info.push(inf);
+    });
+    const addT = [];
+    aT.added.forEach((ti) => {
+      const o = theirs.obl[ti];
+      if (c.obl.some((x) => same(x, o))) return;
+      const row = { key: "a:t:" + ti, kind: "duty", label: "New duty: " + dutyName(o), bs: "(none)", ts: dutyName(o), cs: "(none)", take: "theirs" };
+      rows.push(row); addT.push({ ti, row });
+    });
+    aC.added.forEach((ci) => {
+      if (clean) return;
+      rows.push({ key: "a:c:" + ci, kind: "duty", label: "Added in the current rule: " + dutyName(c.obl[ci]), bs: "(none)", ts: "(none)", cs: dutyName(c.obl[ci]), take: "current" });
+    });
+
+    const build = (choices) => {
+      choices = choices || {};
+      if (clean) return { def: theirs, unresolved: [] };
+      const u = [];
+      const side = (row) => pick(row, choices, u);
+      const val = (row) => (side(row) === "theirs" ? row.theirs : row.current);
+      const out = { id, obl: [] };
+      JF.forEach((k) => { const row = rows.find((r) => r.key === "f:" + k); out[k] = row ? val(row) : c[k]; });
+      c.obl.forEach((co, ci) => {
+        const bi = aC.map.indexOf(ci);
+        if (bi < 0) { out.obl.push(Object.assign({}, co)); return; }
+        const inf = info[bi];
+        if (inf.ti >= 0) {
+          const o = Object.assign({}, co);
+          OF.forEach((k) => { if (inf.rows[k]) o[k] = val(inf.rows[k]); });
+          out.obl.push(o);
+        } else if (side(inf.rows.remove) === "current") out.obl.push(Object.assign({}, co));
+      });
+      info.forEach((inf, bi) => {
+        if (inf.ci < 0 && inf.ti >= 0 && side(inf.rows.remove) === "theirs") out.obl.push(Object.assign({}, theirs.obl[inf.ti]));
+      });
+      addT.forEach((a) => out.obl.push(Object.assign({}, theirs.obl[a.ti])));
+      return { def: cleanDef(out, id), unresolved: u };
+    };
+    return done(rows, clean, build);
+  }
+
+  /* ---------- states ---------- */
+  const reviewOf = (p, it) => Prop.reviews["d_" + p.pid + "__" + it.rid] || null;
+  function itemState(p, it) {
+    const rv = reviewOf(p, it);
+    if (!rv) return "pending";
+    if (rv.hash !== p.hash) return "voided";
+    if (rv.published) return "published";
+    if (rv.status === "rejected") return "rejected";
+    return rv.currentFp === fp(curDef(it.rid)) ? "approved" : "stale";
+  }
+  const STATE_LABEL = { pending: "Pending", voided: "Pending (edited)", approved: "Approved", stale: "Needs re-review", rejected: "Rejected", published: "Published" };
+  const STATE_CHIP = { pending: "plain", voided: "verify", approved: "aud", stale: "verify", rejected: "plain", published: "aud" };
+  const isOpenState = (s) => s === "pending" || s === "voided" || s === "approved" || s === "stale";
+  const propIsOpen = (p) => p.items.some((it) => isOpenState(itemState(p, it)));
+  function whoLabel2(id) { return whoLabel(id); }
+  function authorLabel(p) { return isId(p.author) ? whoLabel(p.author) : p.author || (Store.mode === "local" ? "this browser" : "someone"); }
+  function itemKind(it) { return !it.proposed ? "Delete" : !it.base ? "New" : "Edit"; }
+
+  /* ---------- list view ---------- */
+  function propCard(p) {
+    const counts = {};
+    p.items.forEach((it) => { const s = itemState(p, it); counts[s] = (counts[s] || 0) + 1; });
+    const chips = Object.keys(STATE_LABEL).filter((s) => counts[s]).map((s) => '<span class="chip ' + STATE_CHIP[s] + '">' + counts[s] + " " + esc(STATE_LABEL[s].toLowerCase()) + "</span>").join("");
+    const conflicts = p.items.filter((it) => { const st = itemState(p, it); if (!isOpenState(st)) return false; const m = merge3(it.base, it.proposed, curDef(it.rid), it.rid); return m.conflicts.length > 0; }).length;
+    const mine = (Store.mode === "shared" ? p.author === Store.userId : true);
+    return '<li class="prop" data-pid="' + esc(p.pid) + '"><div class="p-top"><b class="p-title">' + esc(p.title) + '</b><span class="muted">by ' + esc(authorLabel(p)) + " · " + esc(p.createdAt ? fmtDT(new Date(p.createdAt)) : "") + " · " + p.items.length + (p.items.length === 1 ? " rule" : " rules") + "</span></div>" +
+      (p.description ? '<p class="muted p-desc">' + esc(p.description) + "</p>" : "") +
+      '<div class="chips">' + chips + (conflicts ? '<span class="chip verify">' + conflicts + (conflicts === 1 ? " conflict" : " conflicts") + "</span>" : "") + "</div>" +
+      '<div class="h-act"><button class="btn small primary" type="button" data-pact="review" data-pid="' + esc(p.pid) + '">Review</button>' +
+      '<button class="btn small" type="button" data-pact="export" data-pid="' + esc(p.pid) + '">Export file</button>' +
+      (mine || Store.canEdit ? '<button class="btn small danger" type="button" data-pact="delete" data-pid="' + esc(p.pid) + '">' + (propIsOpen(p) ? "Withdraw" : "Delete") + "</button>" : "") + "</div></li>";
+  }
+  function renderPropList() {
+    const f = Prop.filter;
+    const list = Prop.list.filter((p) => (f === "all" ? true : f === "open" ? propIsOpen(p) : !propIsOpen(p)));
+    const nOpen = Prop.list.filter(propIsOpen).length;
+    $("#propCount").textContent = Prop.list.length ? "Showing " + list.length + " of " + Prop.list.length + " proposal" + (Prop.list.length === 1 ? "" : "s") + " (" + nOpen + " open)." : "";
+    $("#propItems").innerHTML = list.length ? list.map(propCard).join("") : '<li class="muted rule-empty">' + (Prop.list.length ? "No proposals match this filter." : "No proposals yet. Use Edit on any rule, or import a file, to propose a change.") + "</li>";
+  }
+  function renderPolicy() {
+    const el = $("#pReqReview");
+    el.checked = mustReview();
+    el.disabled = !Store.canEdit;
+    $("#pPolicyNote").textContent = Store.canEdit
+      ? (mustReview() ? "Edits become proposals. Only publishing changes the live rules." : "Editors can save changes directly. Anyone can still propose.")
+      : (mustReview() ? "Changes to the rules go through review." : "Editors can save directly.");
+  }
+
+  /* ---------- review view ---------- */
+  function openReview(pid) {
+    Prop.openId = pid; Prop.confirm = null;
+    const p = Prop.list.find((x) => x.pid === pid);
+    const first = p.items.find((it) => isOpenState(itemState(p, it))) || p.items[0];
+    selectItem(first.rid);
+    renderProposals();
+    $("#propReview").scrollIntoView({ block: "start" });
+  }
+  function selectItem(rid) {
+    Prop.sel = rid;
+    const p = Prop.list.find((x) => x.pid === Prop.openId);
+    const it = p && p.items.find((x) => x.rid === rid);
+    const rv = it && reviewOf(p, it);
+    Prop.choices = rv && rv.hash === p.hash ? Object.assign({}, rv.choices) : {};
+    Prop.note = rv && rv.hash === p.hash ? rv.note : "";
+  }
+
+  function tableHTML(m, editable) {
+    if (!m.rows.length) return '<p class="muted">No effective changes: the live rule already matches this proposal.</p>';
+    const three = !m.clean;
+    const head = three ? ["Change", "Base", "Proposed", "Current", "Result"] : ["Change", "Before", "After"];
+    const body = m.rows.map((r) => {
+      if (!three) return "<tr><td>" + esc(r.label) + "</td><td>" + esc(r.bs) + '</td><td class="rv-new">' + esc(r.ts) + "</td></tr>";
+      let res;
+      if (r.take === "conflict") {
+        const ch = Prop.choices[r.key];
+        const rd = (v, t) => '<label class="rv-opt"><input type="radio" name="c-' + esc(r.key) + '" value="' + v + '" data-ckey="' + esc(r.key) + '"' + (ch === v ? " checked" : "") + (editable ? "" : " disabled") + "> " + t + "</label>";
+        res = rd("theirs", "Use proposed") + rd("current", "Keep current");
+      } else if (r.take === "theirs") res = '<span class="chip aud">From proposal</span>';
+      else if (r.take === "current") res = '<span class="chip plain">Current kept</span>';
+      else res = '<span class="chip plain">Both agree</span>';
+      return '<tr class="' + (r.take === "conflict" ? "rv-conflict" : "") + '"><td>' + esc(r.label) + "</td><td>" + esc(r.bs) + '</td><td class="' + (r.take === "theirs" || r.take === "conflict" ? "rv-new" : "") + '">' + esc(r.ts) + '</td><td class="' + (r.take === "current" || r.take === "conflict" ? "rv-cur" : "") + '">' + esc(r.cs) + "</td><td>" + res + "</td></tr>";
+    }).join("");
+    return '<div class="tbl-wrap"><table class="rp-table rv-table"><thead><tr>' + head.map((h) => "<th>" + h + "</th>").join("") + "</tr></thead><tbody>" + body + "</tbody></table></div>";
+  }
+
+  function renderReview() {
+    const p = Prop.list.find((x) => x.pid === Prop.openId);
+    if (!p) return;
+    const it = p.items.find((x) => x.rid === Prop.sel) || p.items[0];
+    const editable = Store.canEdit;
+    const cur = curDef(it.rid);
+    const m = merge3(it.base, it.proposed, cur, it.rid);
+    const st = itemState(p, it), rv = reviewOf(p, it);
+    const states = p.items.map((x) => itemState(p, x));
+    const nApproved = states.filter((s) => s === "approved").length;
+    const nOpen = states.filter(isOpenState).length;
+
+    const list = p.items.map((x, i) => {
+      const s = states[i];
+      const mm = isOpenState(s) ? merge3(x.base, x.proposed, curDef(x.rid), x.rid) : null;
+      return '<li><button type="button" class="rv-item' + (x.rid === it.rid ? " on" : "") + '" data-pact="select" data-rid="' + esc(x.rid) + '"><span class="nm">' + esc(x.name) + '</span><span class="muted">' + itemKind(x) + "</span>" +
+        '<span class="chip ' + STATE_CHIP[s] + '">' + esc(STATE_LABEL[s]) + "</span>" + (mm && mm.conflicts.length ? '<span class="chip verify">Conflict</span>' : "") + "</button></li>";
+    }).join("");
+
+    let banner = "";
+    if (st === "published") banner = '<p class="msg">Published ' + esc(rv.publishedAt ? fmtDT(new Date(rv.publishedAt)) : "") + " by " + esc(whoLabel(rv.publishedBy) || "an editor") + ".</p>";
+    else if (st === "stale") banner = '<p class="msg warn">This rule changed after it was approved, so the approval no longer applies. Review it again.</p>';
+    else if (st === "voided") banner = '<p class="msg warn">This proposal was edited after it was reviewed, so the earlier decision was cleared.</p>';
+    else if (st === "approved") banner = '<p class="msg">Approved by ' + esc(whoLabel(rv.by) || "an editor") + " " + esc(rv.at ? fmtDT(new Date(rv.at)) : "") + ". It is not live until published.</p>";
+    else if (st === "rejected") banner = '<p class="msg">Rejected by ' + esc(whoLabel(rv.by) || "an editor") + " " + esc(rv.at ? fmtDT(new Date(rv.at)) : "") + ".</p>";
+    const state = !m.clean ? (m.conflicts.length ? '<p class="msg warn"><b>Conflict.</b> This rule changed after the proposal was drafted. Compare the three versions and choose a result for each conflicting row.</p>' : '<p class="msg">This rule changed after the proposal was drafted, but the changes do not overlap. They merge cleanly.</p>') : '<p class="muted">No one has changed this rule since the proposal was drafted.</p>';
+
+    const prevHTML = '<div class="rv-result" id="rvResult"></div>';
+    const decided = st === "approved" || st === "rejected";
+    const detail = '<h4>' + esc(it.name) + (it.rid.includes("-") ? "" : '<span class="iso"> ' + esc(it.rid) + "</span>") + ' <span class="chip plain">' + itemKind(it) + "</span></h4>" + banner + state + tableHTML(m, editable && st !== "published") + prevHTML +
+      '<div class="field"><label class="lbl" for="rvNote">Reviewer note</label><textarea id="rvNote" rows="2" maxlength="1000"' + (editable && st !== "published" ? "" : " disabled") + ">" + esc(Prop.note) + "</textarea></div>" +
+      '<div class="actions rv-actions">' + (editable && st !== "published" ? '<button class="btn primary" type="button" data-pact="approve" id="rvApprove">Approve this rule</button><button class="btn" type="button" data-pact="reject">Reject</button>' + (decided || st === "stale" ? '<button class="btn" type="button" data-pact="clear">Clear decision</button>' : "") : "") +
+      '<button class="btn" type="button" data-pact="next">Next to review</button></div>' +
+      '<p class="muted">Approving or rejecting does not change the live rules. Only publishing does.</p>';
+
+    let publish = "";
+    if (Prop.confirm === "publish") {
+      const rows = p.items.filter((x) => itemState(p, x) === "approved").map((x) => { const r = reviewOf(p, x); const ch = diffDefs(curDef(x.rid), r.resolved); return "<li><b>" + esc(x.name) + "</b>: " + (ch.length ? esc(ch.slice(0, 3).join("; ") + (ch.length > 3 ? "; and " + (ch.length - 3) + " more" : "")) : "no effective change") + "</li>"; }).join("");
+      publish = '<div class="confirm-box rv-publish"><div><p role="alert"><b>Publish ' + nApproved + " approved change" + (nApproved === 1 ? "" : "s") + " to the live rules?</b></p><ul>" + rows + '</ul></div><span class="actions"><button class="btn primary" type="button" data-pact="publish-yes"' + (Prop.busy ? " disabled" : "") + '>Publish now</button><button class="btn" type="button" data-pact="publish-no">Not yet</button></span></div>';
+    }
+    const nReview = states.filter((x) => x === "pending" || x === "voided" || x === "stale").length;
+    const bar = '<div class="rv-bar"><span class="chips"><span class="chip plain">' + nReview + " to review</span><span class=\"chip aud\">" + nApproved + " approved</span><span class=\"chip plain\">" + states.filter((s) => s === "rejected").length + " rejected</span><span class=\"chip plain\">" + states.filter((s) => s === "published").length + " published</span></span>" +
+      (editable ? '<button class="btn primary small" type="button" data-pact="publish"' + (nApproved ? "" : " disabled") + ">Publish " + nApproved + " approved</button>" : '<span class="muted">Only editors can approve and publish.</span>') + "</div>";
+
+    $("#propReview").innerHTML = '<div class="rv"><div class="rv-head"><button class="btn small" type="button" data-pact="back">← All proposals</button><h3>' + esc(p.title) + '</h3><p class="muted">by ' + esc(authorLabel(p)) + " · " + esc(p.createdAt ? fmtDT(new Date(p.createdAt)) : "") + "</p>" + (p.description ? "<p>" + esc(p.description) + "</p>" : "") + bar + publish +
+      '<p id="rvFlash" class="flash" role="status" hidden></p></div><div class="rv-body"><ol class="rv-items" aria-label="Rules in this proposal">' + list + '</ol><div class="rv-detail">' + detail + "</div></div></div>";
+    refreshReviewDynamic();
+  }
+
+  function refreshReviewDynamic() {
+    const p = Prop.list.find((x) => x.pid === Prop.openId);
+    if (!p) return;
+    const it = p.items.find((x) => x.rid === Prop.sel);
+    if (!it || !$("#rvResult")) return;
+    const cur = curDef(it.rid);
+    const m = merge3(it.base, it.proposed, cur, it.rid);
+    const r = m.build(Prop.choices);
+    const box = $("#rvResult");
+    if (r.unresolved.length) {
+      box.innerHTML = '<p class="msg warn">' + r.unresolved.length + (r.unresolved.length === 1 ? " conflict still needs" : " conflicts still need") + ' a choice before you can approve.</p><span class="actions"><button class="btn small" type="button" data-pact="all-theirs">Use proposed for all</button><button class="btn small" type="button" data-pact="all-current">Keep current for all</button></span>';
+    } else {
+      const lines = diffDefs(cur, r.def);
+      box.innerHTML = "<h5>What publishing would change</h5>" + (lines.length ? '<ul class="h-changes">' + lines.map((l) => "<li>" + esc(l) + "</li>").join("") + "</ul>" : '<p class="muted">Nothing. The live rule already matches the result.</p>');
+    }
+    const btn = $("#rvApprove");
+    if (btn) btn.disabled = r.unresolved.length > 0 || Prop.busy;
+  }
+
+  function flashProp(text, isErr) {
+    const el = $("#rvFlash") || $("#propFlash");
+    if (!el) return;
+    el.textContent = text; el.hidden = false; el.classList.toggle("err", !!isErr);
+    clearTimeout(flashProp.t);
+    flashProp.t = setTimeout(() => { el.hidden = true; }, 5000);
+  }
+
+  async function decide(status) {
+    const p = Prop.list.find((x) => x.pid === Prop.openId);
+    const it = p && p.items.find((x) => x.rid === Prop.sel);
+    if (!it || Prop.busy) return;
+    const cur = curDef(it.rid);
+    let resolved = null, choices = {};
+    if (status === "approved") {
+      const r = merge3(it.base, it.proposed, cur, it.rid).build(Prop.choices);
+      if (r.unresolved.length) return;
+      resolved = r.def; choices = Object.assign({}, Prop.choices);
+    }
+    Prop.busy = true;
+    try {
+      await reviewPut({ pid: p.pid, rid: it.rid, status, by: Store.userId || "", at: new Date().toISOString(), note: Prop.note.trim(), hash: p.hash, resolved, choices, currentFp: fp(cur), published: false });
+      Prop.busy = false;
+      const nxt = p.items.find((x) => x.rid !== it.rid && isOpenState(itemState(p, x)) && itemState(p, x) !== "approved");
+      if (nxt) selectItem(nxt.rid);
+      renderProposals();
+      flashProp(status === "approved" ? "Approved. It goes live when you publish." : "Rejected.");
+    } catch (e) { Prop.busy = false; renderProposals(); flashProp(errText(e), true); }
+  }
+  async function publishApproved() {
+    const p = Prop.list.find((x) => x.pid === Prop.openId);
+    if (!p || Prop.busy) return;
+    Prop.busy = true; renderReview();
+    let n = 0, fail = null;
+    for (const it of p.items.filter((x) => itemState(p, x) === "approved")) {
+      const rv = reviewOf(p, it);
+      try {
+        await commitRule(it.rid, rv.resolved, "publish", p.title);
+        await reviewPut(Object.assign({}, rv, { published: true, publishedAt: new Date().toISOString(), publishedBy: Store.userId || "" }));
+        n++;
+      } catch (e) { fail = e; break; }
+    }
+    Prop.busy = false; Prop.confirm = null;
+    renderProposals();
+    flashProp(fail ? n + " published, then it stopped: " + errText(fail) : "Published " + n + " change" + (n === 1 ? "" : "s") + " to the live rules.", !!fail);
+  }
+
+  function renderProposals() {
+    const inReview = !!Prop.openId;
+    $("#propListView").hidden = inReview;
+    $("#propReview").hidden = !inReview;
+    renderPolicy();
+    const nOpen = Prop.list.filter(propIsOpen).length;
+    const b = $("#paneProposals");
+    if (b) b.textContent = "Proposals" + (nOpen ? " (" + nOpen + ")" : "");
+    if (inReview) renderReview(); else renderPropList();
+  }
+  function renderProposalsIfVisible() {
+    const b = $("#paneProposals");
+    if (b) { const nOpen = Prop.list.filter(propIsOpen).length; b.textContent = "Proposals" + (nOpen ? " (" + nOpen + ")" : ""); }
+    if (S.view === "rules" && !$("#proposalsPane").hidden) renderProposals();
+  }
+
+  /* ---------- propose from the editor or an import ---------- */
+  function updateEditorGate() {
+    const add = $("#btnAddRule");
+    if (add) { add.textContent = canDirect() ? "Add a jurisdiction" : "Propose a jurisdiction"; add.hidden = false; }
+    if (typeof renderRules === "function" && S.view === "rules" && !$("#rulesPane").hidden) renderRules();
+    if (ED && ED.d && $("#edFoot")) refreshEd();
+  }
+
+  function proposeFormHTML(defaultTitle) {
+    const f = ED.form || {};
+    return '<div class="propose-form"><div class="field"><label class="lbl" for="pfTitle">Proposal title</label><input id="pfTitle" type="text" maxlength="160" value="' + esc(f.title != null ? f.title : defaultTitle) + '"></div>' +
+      (Store.mode === "shared" ? "" : '<div class="field"><label class="lbl" for="pfAuthor">Proposed by</label><input id="pfAuthor" type="text" maxlength="100" value="' + esc(f.author != null ? f.author : savedAuthor()) + '" placeholder="Your name"></div>') +
+      '<div class="field"><label class="lbl" for="pfNote">Why (optional)</label><textarea id="pfNote" rows="2" maxlength="1500">' + esc(f.note || "") + '</textarea></div>' +
+      '<span class="actions"><button class="btn primary" type="button" data-act="propose-go">Submit proposal</button><button class="btn" type="button" data-act="propose-back">Back</button></span></div>';
+  }
+
+  async function proposeFromEditor(mode) {
+    const d = ED.d;
+    const title = $("#pfTitle") ? $("#pfTitle").value : "";
+    const note = $("#pfNote") ? $("#pfNote").value : "";
+    const author = $("#pfAuthor") ? $("#pfAuthor").value : "";
+    ED.form = { title, note, author };
+    const rid = d.isNew ? d.id.trim().toUpperCase() : d.id;
+    const base = curDef(rid);
+    let proposed;
+    if (mode === "reset") proposed = baseDef(rid);
+    else if (mode === "del") proposed = null;
+    else { const errs = validate(d); if (Object.keys(errs).length) { $("#edMsgs").innerHTML = '<p class="msg err">Fix the marked fields first.</p>'; ED.confirm = null; refreshEd(); return; } proposed = fromDraft(d); }
+    if (same(base, proposed)) { $("#edMsgs").innerHTML = '<p class="msg err">There is nothing to propose: the live rule already matches.</p>'; ED.confirm = null; refreshEd(); return; }
+    ED.busy = true; refreshEd();
+    try {
+      const nm = (proposed || base).name;
+      await submitProposal(title || (mode === "reset" ? "Reset " + nm : mode === "del" ? "Delete " + nm : (base ? "Update " : "Add ") + nm), note, [{ rid, name: nm, base, proposed }], "editor", authorForNew(author));
+      ED.busy = false;
+      closeEditor(true);
+      showPane("proposals");
+      flashProp("Proposal submitted. An editor can review it here.");
+    } catch (e) { ED.busy = false; ED.confirm = null; refreshEd(); $("#edMsgs").innerHTML = '<p class="msg err">' + esc(errText(e)) + "</p>"; }
+  }
+
+  /* ---------- wiring ---------- */
+  function initProposalsUI() {
+    $("#paneProposals").addEventListener("click", () => showPane("proposals"));
+    $("#pFilter").addEventListener("change", (e) => { Prop.filter = e.target.value; renderPropList(); });
+    $("#pReqReview").addEventListener("change", async (e) => {
+      const v = e.target.checked;
+      try { await policySet(v); flashProp(v ? "Review is now required before rules change." : "Editors can save changes directly."); }
+      catch (err) { e.target.checked = !v; flashProp(errText(err), true); }
+    });
+    $("#btnImportToProposal").addEventListener("click", () => {
+      showPane("rules");
+      $("#backup").open = true;
+      $("#importText").focus();
+      $("#backup").scrollIntoView({ block: "start" });
+    });
+
+    const onClick = async (e) => {
+      const b = e.target.closest("[data-pact]");
+      if (!b) return;
+      const act = b.dataset.pact;
+      if (act === "review") return openReview(b.dataset.pid);
+      if (act === "back") { Prop.openId = null; Prop.sel = null; Prop.confirm = null; return renderProposals(); }
+      if (act === "export") {
+        const p = Prop.list.find((x) => x.pid === b.dataset.pid); if (!p) return;
+        const r = await deliverText("breach-clock-proposal-" + slugify(p.title) + "_" + fileStamp() + ".json", JSON.stringify(proposalFile(p), null, 2), b, "#propCopy");
+        if (r !== "declined") $("#propMsg").textContent = r === "saved" ? "Proposal file saved." : "Proposal file copied, or shown below if your browser blocked copying.";
+        return;
+      }
+      if (act === "delete") {
+        const p = Prop.list.find((x) => x.pid === b.dataset.pid); if (!p) return;
+        if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Confirm " + (propIsOpen(p) ? "withdraw" : "delete"); setTimeout(() => { if (b.isConnected) { b.dataset.armed = ""; b.textContent = propIsOpen(p) ? "Withdraw" : "Delete"; } }, 4000); return; }
+        try { await propDelete(p.pid); flashProp("Proposal removed."); } catch (err) { flashProp(errText(err), true); }
+        return;
+      }
+      if (act === "select") { selectItem(b.dataset.rid); return renderReview(); }
+      if (act === "approve") return decide("approved");
+      if (act === "reject") return decide("rejected");
+      if (act === "clear") {
+        const p = Prop.list.find((x) => x.pid === Prop.openId); const it = p && p.items.find((x) => x.rid === Prop.sel);
+        if (it) { try { await reviewDel(p.pid, it.rid); Prop.choices = {}; Prop.note = ""; renderProposals(); } catch (err) { flashProp(errText(err), true); } }
+        return;
+      }
+      if (act === "next") {
+        const p = Prop.list.find((x) => x.pid === Prop.openId); if (!p) return;
+        const idx = p.items.findIndex((x) => x.rid === Prop.sel);
+        const order = p.items.slice(idx + 1).concat(p.items.slice(0, idx + 1));
+        const nxt = order.find((x) => { const s = itemState(p, x); return s === "pending" || s === "voided" || s === "stale"; }) || order[0];
+        selectItem(nxt.rid); return renderReview();
+      }
+      if (act === "all-theirs" || act === "all-current") {
+        const p = Prop.list.find((x) => x.pid === Prop.openId); const it = p && p.items.find((x) => x.rid === Prop.sel); if (!it) return;
+        const m = merge3(it.base, it.proposed, curDef(it.rid), it.rid);
+        m.conflicts.forEach((k) => { Prop.choices[k] = act === "all-theirs" ? "theirs" : "current"; });
+        return renderReview();
+      }
+      if (act === "publish") { Prop.confirm = "publish"; return renderReview(); }
+      if (act === "publish-no") { Prop.confirm = null; return renderReview(); }
+      if (act === "publish-yes") return publishApproved();
+    };
+    $("#proposalsPane").addEventListener("click", onClick);
+    $("#propReview").addEventListener("change", (e) => {
+      const r = e.target.closest("[data-ckey]");
+      if (r) { Prop.choices[r.dataset.ckey] = r.value; refreshReviewDynamic(); }
+    });
+    $("#propReview").addEventListener("input", (e) => { if (e.target.id === "rvNote") Prop.note = e.target.value; });
+  }
+
+  /* ==================================================================
+     Printable report: one document covering dates, deadlines, counts,
+     rules in force and assumptions. Print (standalone), save as an HTML
+     file, or copy as text.
+  ================================================================== */
+  function reportData() {
+    const c = ctx(false);
+    const sel = DATA.list.filter((j) => S.sel.has(j.id));
+    const all = evaluateAll(sel, c);
+    const zeroed = sel.filter((j) => S.counts[j.id] === 0);
+    return { c, sel, all, zeroed };
+  }
+  const isLive = (r) => r.applicability === "applies" || r.applicability === "conditional";
+
+  function rpChips(r) {
+    return '<span class="chip ' + stClass(r.status) + '">' + esc(ST[r.status].label) + "</span>" +
+      (r.applicability === "conditional" ? ' <span class="chip plain">If significant harm</span>' : "") +
+      (r.o.vol ? ' <span class="chip plain">Voluntary</span>' : "") +
+      (r.conf === "verify" ? ' <span class="chip verify">Verify</span>' : "") +
+      (DATA.overrides[r.j.id] ? ' <span class="chip plain">Edited rule</span>' : "");
+  }
+  function rpPlan(r) {
+    if (r.plan === "misses") return '<div class="res-plan misses">Planned notice misses this by ' + esc(fmtDur(-r.slackMs)) + ".</div>";
+    if (r.plan === "meets") return '<div class="res-plan meets">Planned notice leaves ' + esc(fmtDur(r.slackMs)) + " to spare.</div>";
+    return "";
+  }
+  function rpFixedRow(r) {
+    const o = r.o;
+    return "<tr><td class=\"mono nowrap\">" + esc(fmtDT(r.deadline)) + '<div class="muted">' + esc(relText(r)) + "</div></td>" +
+      "<td><b>" + esc(r.j.name) + "</b></td>" +
+      "<td>" + esc(AUD_SHORT[o.aud]) + '<div class="muted">' + esc(o.auth) + "</div></td>" +
+      "<td>" + esc(ruleText(o, r)) + '<div class="muted">' + esc(o.basis) + "</div>" + (o.cond ? '<div class="muted small-text">' + esc(o.cond) + "</div>" : "") + "</td>" +
+      "<td>" + rpChips(r) + rpPlan(r) + "</td></tr>";
+  }
+  function rpAsapRow(r) {
+    const o = r.o;
+    return "<tr><td><b>" + esc(r.j.name) + "</b></td><td>" + esc(AUD_SHORT[o.aud]) + '<div class="muted">' + esc(o.auth) + "</div></td>" +
+      "<td>" + esc(o.basis) + (o.cond ? '<div class="muted small-text">' + esc(o.cond) + "</div>" : "") + "</td>" +
+      '<td class="mono nowrap">' + esc(asapText(r) || "") + "</td><td>" + rpChips(r) + "</td></tr>";
+  }
+  const table = (head, rows, cls) => '<div class="tbl-wrap"><table class="rp-table ' + (cls || "") + '"><thead><tr>' + head.map((h) => "<th>" + esc(h) + "</th>").join("") + "</tr></thead><tbody>" + rows.join("") + "</tbody></table></div>";
+
+  function reportHTML(d) {
+    const { c, sel, all, zeroed } = d;
+    const live = all.filter(isLive);
+    const fixed = live.filter((r) => r.kind === "fixed" && r.deadline && r.status !== "pending" && r.status !== "waiting").sort((a, b) => a.deadline - b.deadline || a.j.name.localeCompare(b.j.name));
+    const asap = live.filter((r) => r.kind === "asap").sort((a, b) => a.j.name.localeCompare(b.j.name));
+    const waiting = live.filter((r) => r.status === "waiting");
+    const notTrig = all.filter((r) => r.applicability === "not-triggered");
+    const pending = all.filter((r) => r.applicability === "pending-law");
+    const noOb = sel.filter((j) => !j.obl.length && S.counts[j.id] !== 0);
+    const counted = sel.length - zeroed.length;
+
+    const cnt = {};
+    fixed.forEach((r) => { cnt[r.status] = (cnt[r.status] || 0) + 1; });
+    const order = ["late", "critical", "urgent", "soon", "later", "distant", "met", "missed"];
+    const tiles = order.filter((k) => cnt[k]).map((k) => '<div class="tile ' + stClass(k) + '"><span class="num">' + cnt[k] + '</span><span class="lab">' + esc(ST[k].tile) + "</span></div>").join("");
+    const nPlanMiss = fixed.filter((r) => r.plan === "misses").length;
+
+    const dl = [
+      ["Incident", c.incident ? fmtDT(c.incident) : "Not entered"],
+      ["Confirmation", fmtDT(c.confirmation)],
+      ["Notification", c.notification ? fmtDT(c.notification) + (c.notification <= c.asOf ? " (done)" : " (planned)") : "Not entered"],
+      ["Evaluated as of", fmtDT(c.asOf) + (S.asOfMode === "custom" ? " (chosen time)" : " (when this report was made)")],
+      ["Clocks start at", S.clockStart === "incident" ? "Incident date (conservative)" : "Confirmation date"],
+      ["Undetected for", c.incident ? fmtDur(c.confirmation - c.incident) : "Unknown"],
+      ["Confirmation to notification", c.notification ? fmtDur(c.notification - c.confirmation) : "Not set"],
+    ].map((p) => "<dt>" + esc(p[0]) + "</dt><dd>" + esc(p[1]) + "</dd>").join("");
+
+    const countRows = sel.slice().sort((a, b) => a.name.localeCompare(b.name)).map((j) => {
+      const n = S.counts[j.id];
+      const below = all.filter((r) => r.j.id === j.id && (r.applicability === "not-triggered" || r.applicability === "conditional")).map((r) => AUD_SHORT[r.o.aud] + " duty (" + thrLabel(r.o).replace(/^[^:]+: /, "") + ")");
+      return "<tr><td><b>" + esc(j.name) + '</b></td><td class="mono">' + (n == null ? "Not entered" : n.toLocaleString()) + "</td><td>" + (n === 0 ? "Left out of this report" : below.length ? esc("Below threshold: " + Array.from(new Set(below)).join("; ")) : "") + "</td></tr>";
+    });
+
+    const edited = Object.keys(DATA.overrides).map((id) => DATA.overrides[id]).sort((a, b) => a.def.name.localeCompare(b.def.name));
+    const verifyNames = Array.from(new Set(live.filter((r) => r.conf === "verify").map((r) => r.j.name))).sort();
+    const ruleBits = [
+      "Built-in rule set: " + BASE_JURISDICTIONS.length + " jurisdictions, snapshot October 2026.",
+      edited.length ? edited.length + " rule" + (edited.length === 1 ? " has" : "s have") + " been edited or added in this copy of the tool:" : "No rules have been edited. All rules are as built in.",
+    ];
+    const editedList = edited.length ? "<ul>" + edited.map((o) => "<li><b>" + esc(o.def.name) + "</b> (" + (BASE_BY_ID[o.def.id] ? "edited" : "custom") + (o.updatedAt ? ", changed " + esc(fmtDT(new Date(o.updatedAt))) : "") + (o.def.reviewedOn ? ", reviewed " + esc(o.def.reviewedOn) : "") + (o.def.source ? ", source: " + esc(o.def.source) : "") + ")</li>").join("") + "</ul>" : "";
+
+    return '<header class="rp-head"><p class="eyebrow">Personal-data breach</p><h1>Notification deadline report</h1><p class="muted">Made ' + esc(fmtDT(new Date())) + " (" + esc(TZ) + "). A planning aid, not legal advice.</p></header>" +
+
+      '<section class="rp-sec"><h2>Incident timeline</h2><dl class="rp-dl">' + dl + "</dl></section>" +
+
+      '<section class="rp-sec"><h2>Summary</h2><p>' + counted + " jurisdiction" + (counted === 1 ? "" : "s") + " counted. " + fixed.length + " fixed deadline" + (fixed.length === 1 ? "" : "s") + ", " + asap.length + " duties with no fixed date" +
+      (nPlanMiss ? ". <b>" + nPlanMiss + " deadline" + (nPlanMiss === 1 ? " is" : "s are") + " missed by the planned notice date.</b>" : ".") + '</p><div class="tiles">' + tiles + "</div></section>" +
+
+      '<section class="rp-sec"><h2>Timeline</h2><div class="tl" id="rpTimeline"></div><ul class="legend" id="rpLegend"></ul></section>' +
+
+      '<section class="rp-sec"><h2>Fixed deadlines (' + fixed.length + ")</h2>" +
+      (fixed.length ? table(["Due", "Jurisdiction", "Who is told", "Rule and basis", "Status"], fixed.map(rpFixedRow), "fixed") : '<p class="muted">None for the current selection.</p>') + "</section>" +
+
+      (asap.length ? '<section class="rp-sec"><h2>No fixed date: act without undue delay (' + asap.length + ")</h2>" + table(["Jurisdiction", "Who is told", "Basis and conditions", "Clock", "Status"], asap.map(rpAsapRow)) + "</section>" : "") +
+
+      (waiting.length ? '<section class="rp-sec"><h2>Clocks that start when you notify (' + waiting.length + ")</h2><ul>" + waiting.map((r) => "<li><b>" + esc(r.j.name) + "</b>: " + esc(AUD_SHORT[r.o.aud] + ", " + r.o.auth + ", " + ruleText(r.o, r)) + "</li>").join("") + "</ul></section>" : "") +
+
+      '<section class="rp-sec"><h2>Affected people by jurisdiction</h2>' + table(["Jurisdiction", "Affected people", "Notes"], countRows, "narrow") + "</section>" +
+
+      ((notTrig.length || pending.length || noOb.length) ? '<section class="rp-sec"><h2>Not in this deadline list</h2>' +
+        (notTrig.length ? "<p><b>Not triggered at this volume:</b> " + esc(Array.from(new Set(notTrig.map((r) => r.j.name + " (" + AUD_SHORT[r.o.aud] + ")"))).join("; ")) + ".</p>" : "") +
+        (pending.length ? "<p><b>Not yet in force:</b> " + esc(Array.from(new Set(pending.map((r) => r.j.name + " (from " + r.o.eff + ")"))).join("; ")) + ".</p>" : "") +
+        (noOb.length ? "<p><b>No fixed deadline identified:</b> " + esc(noOb.map((j) => j.name).join(", ")) + ". This is not the same as having no obligation. Confirm locally.</p>" : "") + "</section>" : "") +
+
+      '<section class="rp-sec"><h2>Rules and assumptions</h2><ul>' +
+      "<li>" + esc(ruleBits[0]) + "</li><li>" + esc(ruleBits[1]) + "</li></ul>" + editedList +
+      (verifyNames.length ? "<p><b>Rules tagged Verify and used above:</b> " + esc(verifyNames.join(", ")) + ". These are recent, ambiguous or thinly sourced.</p>" : "") +
+      "<ul><li>Business days exclude Saturdays and Sundays only. Local public holidays are not applied.</li>" +
+      "<li>Day counts keep the same clock time as the starting point. Times are shown in " + esc(TZ) + ".</li>" +
+      "<li>The notification date is treated as the date both regulators and individuals are told.</li>" +
+      "<li>Counts are as entered by the user. Harm, risk and materiality tests are listed as conditions for counsel to judge.</li>" +
+      "<li>Sector regimes (for example NIS2, DORA, GLBA) and contractual deadlines are not modelled. Confirm every jurisdiction with counsel.</li></ul></section>";
+  }
+
+  function renderReport() {
+    const doc = $("#reportDoc");
+    $("#reportMsg").textContent = "";
+    const ready = S.confirmation && S.sel.size;
+    ["#btnPrint", "#btnSaveReport", "#btnReportText"].forEach((id) => { $(id).disabled = !ready; });
+    if (!ready) {
+      doc.innerHTML = '<p class="muted">There is nothing to report yet. Enter a confirmation date and choose at least one jurisdiction in the calculator first.</p>';
+      return;
+    }
+    const d = reportData();
+    S._last = { all: d.all, sel: d.sel, c: d.c };
+    doc.innerHTML = reportHTML(d);
+    drawTimeline($("#rpTimeline"), d.all, d.c);
+    $("#rpLegend").innerHTML = legendHTML(d.all);
+  }
+
+  function reportDocument() {
+    const clone = $("#reportDoc").cloneNode(true);
+    $$(".pop", clone).forEach((n) => n.remove());
+    $$("[tabindex]", clone).forEach((n) => n.removeAttribute("tabindex"));
+    $$("[role=button]", clone).forEach((n) => n.removeAttribute("role"));
+    const css = $$("style").map((s) => s.textContent).join("\n");
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+      "<title>Breach notification deadline report</title><style>body{margin:0}\n" + css + "\n.app{max-width:960px}</style></head><body><div class=\"app\"><section class=\"panel\" id=\"reportView\">" + clone.outerHTML + "</section></div></body></html>";
+  }
+
+  async function deliverText(filename, text, btn, outSel) {
+    if (Store.dl) {
+      try { await Store.dl.save({ filename, data: text }); return "saved"; }
+      catch (e) { if (e && e.code === "declined") return "declined"; }
+    }
+    copyOut(text, btn, outSel);
+    return "copied";
+  }
+
+  function initReportUI() {
+    const standalone = typeof STANDALONE !== "undefined" && STANDALONE;
+    $("#btnPrint").hidden = !standalone;
+    $("#printHint").hidden = standalone;
+    $("#btnPrint").addEventListener("click", () => { if (typeof window.print === "function") window.print(); });
+    $("#btnSaveReport").addEventListener("click", async (e) => {
+      const r = await deliverText("breach-clock-report_" + fileStamp() + ".html", reportDocument(), e.currentTarget, "#reportCopy");
+      $("#reportMsg").textContent = r === "saved" ? "Report saved. Open the file in a browser to read or print it." : r === "copied" ? "The report HTML was copied, or is shown below if your browser blocked copying." : "";
+    });
+    $("#btnReportText").addEventListener("click", (e) => copyOut(buildText(), e.currentTarget, "#reportCopy"));
+    $("#btnReportBack").addEventListener("click", () => { showView("calc"); go(4, true); });
+    $("#btnOpenReport").addEventListener("click", () => { showView("report"); const h = $("#h-report"); h.scrollIntoView({ block: "start" }); h.focus({ preventScroll: true }); });
+  }
+
   /* ------------------------------------------------------------------ boot */
   $("#tzName").textContent = TZ;
   rebuildData();
   loadExample();
   syncInputs();
   initRulesUI();
+  initHistoryUI();
+  initProposalsUI();
+  initReportUI();
   go(1, false);
   if (typeof STANDALONE !== "undefined" && STANDALONE) {
     $("#noteStore").textContent = "Incident dates and affected counts are never saved or sent anywhere. Edits to the rules are stored in this browser (local storage) and nowhere else. Nothing on this page makes network requests.";
   }
   storeInit();
-  window.__BC = { S, DATA, Store, evaluate, evaluateAll, addTime, cleanDef, fromDraft, toDraft, validate };
+  window.__BC = { fileStamp, slugify, S, DATA, Store, Hist, evaluate, evaluateAll, addTime, cleanDef, fromDraft, toDraft, validate, diffDefs, commitRule, merge3, alignDuties, Prop, itemState, fp, mustReview, canDirect, submitProposal, curDef };
 })();
 
 </script>
