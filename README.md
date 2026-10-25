@@ -48,7 +48,7 @@ Options on the Dates step:
 Switch to **Rules** at the top of the page to see every rule the calculator uses.
 
 - **Browse.** Search by name, code, law, authority or condition. Filter by region, duty type (fixed deadline, without undue delay, voluntary, none identified), source check, or edited only. Sort by name, region, fastest deadline or recently edited. "Show full rule text" expands each row.
-- **Edit.** Open any jurisdiction to change its name, region, law, source check, review date, source and notes. Each jurisdiction has a list of **duties** (one notice each). For every duty you set who is told, the authority, the legal basis, the deadline (as soon as possible, hours, calendar days or business days), what the clock starts from (confirmation, incident or notification), a volume threshold with an optional "still applies if significant harm is likely", an effective date, a voluntary flag, a per-duty source check, and conditions and notes.
+- **Edit.** Open any jurisdiction to change its name, region, law, source check, review date, source and notes. Each jurisdiction has a list of **duties** (one notice each). For every duty you set who is told, the authority, the legal basis, the deadline (as soon as possible, hours, calendar days or business days), what the clock starts from (confirmation, incident or notification), a volume threshold with an optional "still applies if significant harm is likely", an effective date, a voluntary flag, a per-duty source check, and conditions and notes. **Law or regime** is the name of the law as a whole and is the line shown under the jurisdiction's name in lists. Each duty also has its own **Legal basis**, the specific provision that duty rests on. They often start out the same, so if you change a duty's legal basis the editor warns you when the Law or regime is still the old text and offers to update it too. A jurisdiction has one **Source check**, and every duty follows it unless you give that duty its own ("Same as the jurisdiction" is the default). The status shown in the Rules list is the weakest effective check across the jurisdiction's duties, so a single duty that still says Verify keeps the jurisdiction at Verify until you change it.
 - **Live preview.** Under each duty, the date it would produce using the dates from step 1.
 - **Validation.** Problems are marked in the field and Save stays disabled until they are fixed.
 - **Add and remove.** Add or delete duties, duplicate them, and reorder them. Add your own jurisdictions (for example a state or sector rule).
@@ -88,23 +88,32 @@ In the Rules view, switch from **Rules** to **History**. Every edit, new jurisdi
 
 History is kept in the same place as the rules: in this browser's local storage in the standalone app (up to 1,000 entries), or shared with everyone in the Claude artifact.
 
+### Importing and merging, one jurisdiction at a time
+
+Importing a rules file or a proposal file never changes anything straight away. Every import is reviewed jurisdiction by jurisdiction, and you accept or reject each one on its own.
+
+1. Open **Back up, share or restore rules** in the Rules view, choose a file or paste JSON, and click **Review import**.
+2. The import lists only the jurisdictions that actually change, marked as changed, new or to be deleted, with what would change in each. Jurisdictions that already match your live rules, or that the file does not actually change, are counted but left out, so you only review what needs a decision.
+3. Click **Review N jurisdictions one by one**. You step through the list. For each one you see a before and after table and a preview of what the live rule would become. Click **Accept this change** or **Reject this change**, optionally with a reviewer note. You can move with **Previous** and **Next** (or the arrow keys), jump to **Next to review**, press **A** to accept or **R** to reject, and filter the list by All, To review, Accepted or Rejected.
+4. A summary appears when every jurisdiction has a decision. Click **Publish N accepted** to apply only what you accepted. Rejected jurisdictions are left exactly as they were. Each published change is recorded in the history with the proposal's title.
+
+If a jurisdiction changed after the file was drafted, the review shows a **three-way view**: **Base** (the rule when the file's author started), **Proposed**, and **Current** (the live rule now). Changes that do not overlap are merged automatically. Where both sides changed the same thing, you choose **Use proposed** or **Keep current** for that row, and you cannot accept the jurisdiction until every conflict is resolved. A plain rules file has no base, so it is compared directly with your live rules. A proposal file carries its author's base, which is what makes the three-way view possible.
+
 ### Proposals and review
 
-When several people revise the rules, changes can go through review instead of being saved straight away. In the Rules view, switch to **Proposals**.
+Under the hood, every import and every edit becomes a **proposal**: a named set of changes with an author and an optional reason. In the Rules view, switch to **Proposals** to see them.
 
-- **Propose.** Editing a rule, adding a jurisdiction, or importing a rules file creates a **proposal**: a named set of changes with an author and an optional reason. Nothing changes in the live rules.
-- **See it before it happens.** A proposal shows exactly what would change, rule by rule, as a before and after table, plus a preview of what publishing would change in the live rule.
-- **Review one rule at a time.** Open a proposal and step through its rules. For each one, **Approve** or **Reject**, with an optional reviewer note. Approving takes the whole rule at once. Reviewers can approve their own proposals.
-- **Three-way view for conflicts.** If a rule changed after the proposal was drafted, the review shows three versions side by side: **Base** (the rule when the proposer started), **Proposed**, and **Current** (the live rule now). Changes that do not overlap are merged automatically. Where both sides changed the same thing, you pick **Use proposed** or **Keep current** for that row, and the approval is blocked until every conflict is resolved. The same applies to duties that were added, removed or edited on either side.
-- **Publish is a separate step.** Approved rules wait until an editor clicks **Publish**. Publishing lists what will change, applies only the approved rules, and records each one in the history with the proposal's title.
-- **Stale approvals are caught.** If the live rule changes after a rule was approved, the approval no longer applies and the rule goes back to "Needs re-review". Editing a proposal after review also clears earlier decisions.
-- **Require review.** The checkbox at the top of the Proposals view controls whether editors can save changes directly or must also go through proposals. In the shared Claude artifact it is on by default. In the standalone app it is off by default, and you can still propose and review.
+- **Propose.** Editing a rule, adding a jurisdiction, or importing a file creates a proposal. Nothing changes in the live rules.
+- **See it before it happens.** A proposal shows exactly what would change, jurisdiction by jurisdiction.
+- **Accept or reject each one.** Decisions are made one jurisdiction at a time, as described above, and reviewers can accept their own proposals.
+- **Publish is a separate step.** Accepted changes wait until an editor clicks **Publish**. Publishing lists what will change and applies only the accepted jurisdictions.
+- **Stale acceptances are caught.** If the live rule changes after you accepted a change, the acceptance no longer applies and the jurisdiction goes back to "Needs re-review". Editing a proposal after review also clears earlier decisions.
+- **Require review.** The checkbox at the top of the Proposals view controls whether editors can save edits directly or must also go through proposals. In the shared Claude artifact it is on by default. In the standalone app it is off by default. Imports are always reviewed jurisdiction by jurisdiction either way.
 
-In the shared Claude artifact, anyone who can contribute can propose, only editors can approve, reject and publish, and each proposal, decision and publish shows who did it. In the standalone app there is no server, so proposals move between people as files:
+In the shared Claude artifact, anyone who can contribute can propose and submit imports, only editors can accept, reject and publish, and each proposal, decision and publish shows who did it. In the standalone app there is no server, so proposals move between people as files:
 
 1. The proposer clicks **Export file** on a proposal and sends the JSON file.
-2. The reviewer opens **Back up, share or restore rules**, imports the file, and clicks **Stage as proposal**.
-3. The reviewer reviews and publishes it in their own copy. Because the file carries the proposer's base version, the three-way view still works if the reviewer's rules have changed since.
+2. The reviewer imports it, reviews it jurisdiction by jurisdiction, and publishes in their own copy.
 
 History restore is a direct action available to editors, so it is not routed through review.
 
@@ -137,7 +146,7 @@ Open **Back up, share or restore rules** at the bottom of the Rules view.
 
 - **Export edited rules** downloads only the rules you changed or added, as JSON.
 - **Export all rules** downloads the full rule set.
-- **Import rules** takes a JSON file (a rules export or a proposal file) or pasted JSON, and shows what would change in each rule. You then **Stage as proposal**, or apply directly if review is not required.
+- **Import rules** takes a JSON file (a rules export or a proposal file) or pasted JSON. It shows which jurisdictions would change and opens a one-by-one accept or reject review. See [Importing and merging](#importing-and-merging-one-jurisdiction-at-a-time).
 - **Reset all edits** removes every edit and custom jurisdiction. Each reset is recorded in the history.
 
 To share your edits with a colleague, export them and send the file; they import it in their own browser. To move to a new browser or machine, do the same.
@@ -164,6 +173,7 @@ The same file works on any static host (Netlify, S3, an internal web server) or 
 ## Accuracy and limits
 
 - **Reference data, not legal advice.** The rule set was compiled and partly cross-checked in October 2026. Laws change, and every jurisdiction has exceptions, thresholds and sector rules that a table cannot capture.
+- **Rules reviewed in this copy.** Argentina, Uzbekistan, the Vatican City, Venezuela, Vietnam, Vanuatu, Yemen, Zambia and Zimbabwe have been reviewed and marked Checked, and those updates are built into this copy of the app. Everything else is as originally compiled.
 - **Source check tags.** Each rule is tagged:
   - **Checked:** cross-checked against current published sources when the dataset was built.
   - **Established:** settled law, from general knowledge, not re-checked.

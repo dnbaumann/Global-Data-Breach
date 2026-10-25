@@ -530,6 +530,15 @@ body.drawer-open { overflow: hidden; }
   .rv-body { grid-template-columns: minmax(0, 1fr); }
 }
 
+.rv-side { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.rv-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 3px 11px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.rv-sum { flex: 1 1 100%; font-size: 12px; color: var(--ink-3); overflow-wrap: anywhere; }
+.rv-nav { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.rv-done { border-color: var(--st-met); }
+.rv-detail .eyebrow { margin: 0; }
+
 </style>
 </head>
 <body>
@@ -1320,6 +1329,12 @@ const BASE_JURISDICTIONS = [
     O("reg", "POTRAZ", "Cyber and Data Protection Act 2021", "asap", { conf: "verify", cond: "A short fixed window is reported. Confirm." }),
   ]),
 ];
+
+const VERIFIED_RULES = {"AR":{"conf":"checked","id":"AR","law":"Law 25.326","name":"Argentina","note":"No statutory deadline identified. Regulator guidance and sector rules (central bank, CNV) may apply.","obl":[],"region":"la","reviewedOn":"","source":""},"UZ":{"conf":"checked","id":"UZ","law":"General Data Protection Law (ZRU-547)","name":"Uzbekistan","note":"","obl":[{"aud":"reg","auth":"uthorized state body (the Migration and Personalization Department","basis":"General Data Protection Law (ZRU-547)","cond":"• Within 24 Hours (Hour 0 to 24): The database operator must notify the authorized state body (the Migration and Personalization Department under the Ministry of Internal Affairs or via the official portal at pd.gov.uz).\n• Within 72 Hours: A detailed follow-up report must be submitted to the authorized body, explaining the causes of the breach, the measures taken, the type and number of data subjects affected, the destination country, and remediation steps.","timing":"24h"},{"aud":"reg","auth":"uthorized state body (the Migration and Personalization Department","basis":"General Data Protection Law (ZRU-547)","cond":"• Within 24 Hours (Hour 0 to 24): The database operator must notify the authorized state body (the Migration and Personalization Department under the Ministry of Internal Affairs or via the official portal at pd.gov.uz).\n• Within 72 Hours: A detailed follow-up report must be submitted to the authorized body, explaining the causes of the breach, the measures taken, the type and number of data subjects affected, the destination country, and remediation steps.","timing":"72h"},{"aud":"sub","auth":"inndividuals","basis":"General Data Protection Law (ZRU-547)","cond":"• Within 24 Hours (Hour 0 to 24): The database operator must notify the authorized state body (the Migration and Personalization Department under the Ministry of Internal Affairs or via the official portal at pd.gov.uz).\n• Within 72 Hours: A detailed follow-up report must be submitted to the authorized body, explaining the causes of the breach, the measures taken, the type and number of data subjects affected, the destination country, and remediation steps.","timing":"72h"}],"region":"as","reviewedOn":"2026-10-25","source":"General Data Protection Law (ZRU-547)v"},"VA":{"conf":"checked","id":"VA","law":null,"name":"Vatican City","note":"","obl":[{"aud":"reg","auth":"Regulator","basis":"","timing":"72h"},{"aud":"reg","auth":"Individuals","basis":"","cond":"If a personal data breach is likely to result in a high risk to the rights and freedoms of natural persons, the data controller must communicate the breach to the affected data subjects without undue delay","timing":"asap"}],"region":"eo","reviewedOn":"","source":""},"VE":{"conf":"checked","id":"VE","law":null,"name":"Venezuela","note":"","obl":[],"region":"la","reviewedOn":"","source":""},"VN":{"conf":"checked","id":"VN","law":"PDP Law 91/2025/QH15; Decree 356/2025","name":"Vietnam","note":"Not clear that notice to individuals is required in all cases.  Check specific facts against the law.","obl":[{"aud":"reg","auth":"Department of Cybersecurity and High-Tech Crime Prevention (MPS)","basis":"PDP Law 2025; Decree 356/2025","cond":"Violations that may harm national security, public order, or individuals' rights or property. Reported as 24 hours where an attack on an information system puts consumer data at risk.","timing":"72h"},{"aud":"sub","auth":"Affected data subjects","basis":"PDP Law 2025; Decree 356/2025","cond":"Reported as 72 hours for sensitive data in finance and banking. Confirm scope in the decree.","timing":"asap"}],"region":"as","reviewedOn":"","source":""},"VU":{"conf":"checked","id":"VU","law":"Data Protection and Privacy Act No. 13 of 2024","name":"Vanuatu","note":"","obl":[{"aud":"reg","auth":"Regulator","basis":"Data Protection and Privacy Act No. 13 of 2024","cond":"The Act itself does not specify a strict hour- or day-based timeline (such as 72 hours) for submitting breach reports.","timing":"asap"}],"region":"oc","reviewedOn":"2026-10-25","source":"Data Protection and Privacy Act No. 13 of 2024"},"YE":{"conf":"checked","id":"YE","law":null,"name":"Yemen","note":"","obl":[],"region":"me","reviewedOn":"","source":""},"ZM":{"conf":"checked","id":"ZM","law":"Data Protection Act 2021","name":"Zambia","note":"","obl":[{"aud":"reg","auth":"Data Protection Commissioner","basis":"DPA 2021","cond":"A short fixed window is reported. Confirm.","timing":"24h"},{"aud":"reg","auth":"Individuals","basis":"Data Protection Act of 2021","timing":"asap"}],"region":"af","reviewedOn":"","source":""},"ZW":{"conf":"verify","id":"ZW","law":"Cyber and Data Protection Act 2024","name":"Zimbabwe","note":"","obl":[{"aud":"reg","auth":"POTRAZ","basis":"Cyber and Data Protection Act 2024","cond":"A short fixed window is reported. Confirm.","conf":"checked","timing":"24h"},{"aud":"sub","auth":"Individuals","basis":"Cyber and Data Protection Act 2024","cond":"A short fixed window is reported. Confirm.","conf":"checked","timing":"72h"}],"region":"af","reviewedOn":"","source":""}};
+Object.keys(VERIFIED_RULES).forEach((id) => {
+  const i = BASE_JURISDICTIONS.findIndex((j) => j.id === id);
+  if (i >= 0) BASE_JURISDICTIONS[i] = VERIFIED_RULES[id]; else BASE_JURISDICTIONS.push(VERIFIED_RULES[id]);
+});
 
 /* ------------------------------------------------------------------
    Deadline engine. Pure functions, no DOM.
@@ -2179,16 +2194,17 @@ function fromInputValue(v) {
     if (typeof o.cond === "string" && o.cond.trim()) out.cond = clip(o.cond, 1500).trim();
     return out;
   }
-  function cleanDef(raw, id) {
+  function cleanDef(raw, id, legacy) {
     if (!raw || typeof raw !== "object") return null;
     const name = clip(raw.name, 120).trim();
     if (!name || !id) return null;
+    const conf = CONF[raw.conf] ? raw.conf : "verify";
     return {
       id, name,
       region: REGIONS[raw.region] ? raw.region : "eo",
       law: clip(raw.law, 200).trim() || null,
-      conf: CONF[raw.conf] ? raw.conf : "verify",
-      obl: (Array.isArray(raw.obl) ? raw.obl : []).slice(0, 20).map(cleanObl).filter(Boolean),
+      conf,
+      obl: (Array.isArray(raw.obl) ? raw.obl : []).slice(0, 20).map(cleanObl).filter(Boolean).map((o) => { if (!legacy && o.conf === conf) delete o.conf; return o; }),
       note: clip(raw.note, 1000).trim(),
       reviewedOn: typeof raw.reviewedOn === "string" && DATE_RE.test(raw.reviewedOn) ? raw.reviewedOn : "",
       source: clip(raw.source, 300).trim(),
@@ -2327,6 +2343,11 @@ function fromInputValue(v) {
     const t = parseTiming(o.timing);
     return t.n * (t.u === "h" ? HOUR : t.u === "d" ? DAY : 1.4 * DAY);
   }
+  const CONF_RANK = { verify: 0, known: 1, checked: 2 };
+  function effConf(j) {
+    if (!j.obl.length) return j.conf;
+    return j.obl.map((o) => o.conf || j.conf).reduce((a, b) => (CONF_RANK[b] < CONF_RANK[a] ? b : a));
+  }
   function fastestMs(j) { return j.obl.reduce((m, o) => Math.min(m, oblMs(o)), Infinity); }
 
   function dutyChip(o) {
@@ -2350,7 +2371,8 @@ function fromInputValue(v) {
       '<div class="rc-name"><span class="nm">' + esc(j.name) + (j.id.includes("-") ? "" : '<span class="iso">' + esc(j.id) + "</span>") + '</span><span class="sm">' + esc(j.law || "No dedicated statute recorded") + "</span></div>" +
       '<div class="rc-region">' + esc(REGIONS[j.region]) + "</div>" +
       '<div class="rc-duties"><div class="chips">' + duties + "</div>" + detail + "</div>" +
-      '<div class="rc-status"><span class="chip ' + (j.conf === "verify" ? "verify" : "plain") + '">' + esc(CONF[j.conf].tag) + "</span>" +
+      '<div class="rc-status"><span class="chip ' + (effConf(j) === "verify" ? "verify" : "plain") + '"' + (effConf(j) !== j.conf ? ' title="At least one duty has its own source check"' : "") + ">" + esc(CONF[effConf(j)].tag) + "</span>" +
+      (j.obl.some((o) => o.conf && o.conf !== j.conf) ? '<span class="sm">' + j.obl.filter((o) => o.conf && o.conf !== j.conf).length + (j.obl.filter((o) => o.conf && o.conf !== j.conf).length === 1 ? " duty has its own check" : " duties have their own check") + "</span>" : "") +
       (custom ? '<span class="chip aud">Custom</span>' : edited ? '<span class="chip aud">Edited</span>' : "") +
       (j.reviewedOn ? '<span class="sm">Reviewed ' + esc(j.reviewedOn) + "</span>" : "") + "</div>" +
       '<div class="rc-act"><button class="btn small" type="button" data-edit="' + esc(j.id) + '">' + "Edit" + "</button></div></li>";
@@ -2362,7 +2384,7 @@ function fromInputValue(v) {
     let list = DATA.list.filter((j) => {
       if (R.region && j.region !== R.region) return false;
       if (R.cov && coverageOf(j) !== R.cov) return false;
-      if (R.conf && j.conf !== R.conf) return false;
+      if (R.conf && effConf(j) !== R.conf) return false;
       if (R.edited && !DATA.overrides[j.id]) return false;
       if (q) {
         const hay = (j.name + " " + j.id + " " + (j.law || "") + " " + j.obl.map((o) => o.auth + " " + o.basis + " " + (o.cond || "")).join(" ")).toLowerCase();
@@ -2391,7 +2413,7 @@ function fromInputValue(v) {
       obl: (j.obl || []).map((o) => {
         const t = parseTiming(o.timing);
         return { aud: o.aud, auth: o.auth || "", basis: o.basis || "", kind: t.asap ? "asap" : t.u, n: t.asap ? "" : String(t.n), from: o.from || "c",
-          min: o.min != null ? String(o.min) : "", harm: !!o.harm, eff: o.eff || "", vol: !!o.vol, conf: o.conf || "", cond: o.cond || "" };
+          min: o.min != null ? String(o.min) : "", harm: !!o.harm, eff: o.eff || "", vol: !!o.vol, conf: o.conf && o.conf !== j.conf ? o.conf : "", cond: o.cond || "" };
       }),
     };
   }
@@ -2451,7 +2473,8 @@ function fromInputValue(v) {
       '<div class="ed-grid">' +
       fld("Who is told", '<select id="ed-' + k + '-aud" data-i="' + i + '" data-f="aud"' + dis() + ">" + optHTML(AUD_LABEL, o.aud) + "</select>", k + ".aud") +
       fld("Authority or recipient", ctl("auth", "text", ' maxlength="200" placeholder="e.g. Information Commissioner"'), k + ".auth") +
-      fld("Legal basis", ctl("basis", "text", ' maxlength="200" placeholder="e.g. GDPR Art. 33"'), k + ".basis") +
+      fld("Legal basis of this duty", ctl("basis", "text", ' maxlength="200" placeholder="e.g. GDPR Art. 33"'), k + ".basis", "The provision this one duty rests on, such as an article. The name of the whole law is set under \u201CLaw or regime\u201D at the top.") +
+      '<div class="field wide"><p class="msg warn basis-sync" data-basishint="' + i + '" hidden></p></div>' +
       '<div class="field"><label class="lbl" for="ed-' + k + '-kind">Deadline</label><div class="inline"><select id="ed-' + k + '-kind" data-i="' + i + '" data-f="kind"' + dis() + ">" + optHTML(KIND_LABEL, o.kind) + "</select>" +
       '<input id="ed-' + k + '-n" data-i="' + i + '" data-f="n" data-numwrap type="number" min="1" max="3650" step="1" inputmode="numeric" value="' + esc(o.n) + '" aria-label="Number of units"' + dis() + "></div>" +
       '<span class="err" data-err="' + k + '.n"></span></div>' +
@@ -2459,7 +2482,7 @@ function fromInputValue(v) {
       fld("Applies from this many affected people", ctl("min", "number", ' min="1" step="1" inputmode="numeric" placeholder="Always applies"'), k + ".min", "Leave blank when there is no volume threshold.") +
       '<div class="field check"><label><input type="checkbox" data-i="' + i + '" data-f="harm"' + (o.harm ? " checked" : "") + dis() + '> Still applies below that number if significant harm is likely</label></div>' +
       fld("Takes effect on", ctl("eff", "date"), k + ".eff", "Leave blank if already in force.") +
-      fld("Source check for this duty", '<select id="ed-' + k + '-conf" data-i="' + i + '" data-f="conf"' + dis() + '><option value=""' + (o.conf ? "" : " selected") + ">Same as the jurisdiction</option>" + optHTML(Object.fromEntries(Object.keys(CONF).map((c) => [c, CONF[c].tag])), o.conf) + "</select>", k + ".conf") +
+      fld("Source check for this duty", '<select id="ed-' + k + '-conf" data-i="' + i + '" data-f="conf"' + dis() + '><option value=""' + (o.conf ? "" : " selected") + ">Same as the jurisdiction (" + esc(CONF[ED.d.conf].tag) + ")</option>" + optHTML(Object.fromEntries(Object.keys(CONF).map((c) => [c, CONF[c].tag])), o.conf) + "</select>", k + ".conf") +
       '<div class="field check"><label><input type="checkbox" data-i="' + i + '" data-f="vol"' + (o.vol ? " checked" : "") + dis() + '> Voluntary or guidance only</label></div>' +
       '<div class="field wide"><label class="lbl" for="ed-' + k + '-cond">Conditions and notes</label><textarea id="ed-' + k + '-cond" data-i="' + i + '" data-f="cond" rows="3" maxlength="1500"' + dis() + ">" + esc(o.cond) + '</textarea></div></div>' +
       '<p class="obl-prev" data-prev="' + i + '"></p></li>';
@@ -2474,8 +2497,8 @@ function fromInputValue(v) {
       fld("Name", '<input id="ed-name" data-f="name" type="text" maxlength="120" value="' + esc(d.name) + '"' + dis() + ">", "name") +
       (d.isNew ? fld("Short code", '<input id="ed-id" data-f="id" type="text" maxlength="24" value="' + esc(d.id) + '" placeholder="e.g. QC"' + dis() + ">", "id", "Used internally. 2 to 24 letters, digits or hyphens.") : fld("Code", '<input id="ed-id" type="text" value="' + esc(d.id) + '" disabled>', "id")) +
       fld("Region", '<select id="ed-region" data-f="region"' + dis() + ">" + optHTML(REGIONS, d.region) + "</select>", "region") +
-      fld("Source check", '<select id="ed-conf" data-f="conf"' + dis() + ">" + optHTML(Object.fromEntries(Object.keys(CONF).map((c) => [c, CONF[c].tag])), d.conf) + "</select>", "conf", "Checked: cross-checked with current sources. Established: settled law, not re-checked. Verify: recent or uncertain.") +
-      '<div class="field wide"><label class="lbl" for="ed-law">Law or regime</label><input id="ed-law" data-f="law" type="text" maxlength="200" value="' + esc(d.law) + '" placeholder="e.g. PIPEDA s. 10.1"' + dis() + "></div>" +
+      fld("Source check", '<select id="ed-conf" data-f="conf"' + dis() + ">" + optHTML(Object.fromEntries(Object.keys(CONF).map((c) => [c, CONF[c].tag])), d.conf) + "</select>", "conf", "Checked: cross-checked with current sources. Established: settled law, not re-checked. Verify: recent or uncertain. Each duty follows this unless it has its own.") + '<div class="field wide"><span class="hint" id="confNote"></span></div>' +
+      '<div class="field wide"><label class="lbl" for="ed-law">Law or regime</label><input id="ed-law" data-f="law" type="text" maxlength="200" value="' + esc(d.law) + '" placeholder="e.g. PIPEDA s. 10.1"' + dis() + '><span class="hint">The law or regime as a whole. This is the line shown under the jurisdiction name in lists. Each duty below has its own legal basis.</span></div>' +
       fld("Last reviewed", '<input id="ed-reviewedOn" data-f="reviewedOn" type="date" value="' + esc(d.reviewedOn) + '"' + dis() + ">", "reviewedOn") +
       fld("Source link or citation", '<input id="ed-source" data-f="source" type="text" maxlength="300" value="' + esc(d.source) + '" placeholder="URL or citation"' + dis() + ">", "source") +
       '<div class="field wide"><label class="lbl" for="ed-note">Notes for this jurisdiction</label><textarea id="ed-note" data-f="note" rows="2" maxlength="1000"' + dis() + ">" + esc(d.note) + "</textarea></div>" +
@@ -2485,6 +2508,13 @@ function fromInputValue(v) {
       '<div class="dr-foot" id="edFoot"></div>';
   }
 
+  /* A duty's legal basis was edited, but the jurisdiction's Law or regime (which started out the same) was not. */
+  function basisOnly(i) {
+    const d = ED.d, orig = ED.orig;
+    if (!orig || !orig.law || !orig.obl[i]) return false;
+    const b = (d.obl[i].basis || "").trim();
+    return orig.obl[i].basis === orig.law && b && b !== orig.law && (d.law || "").trim() === orig.law;
+  }
   function previewText(o, i, errs) {
     if (Object.keys(errs).some((k) => k.startsWith("o" + i + "."))) return "Fix the marked fields to see a preview.";
     const c = ctx(true);
@@ -2510,7 +2540,17 @@ function fromInputValue(v) {
       const num = $("#ed-o" + i + "-n"); if (num) num.hidden = o.kind === "asap";
       const harm = $('[data-i="' + i + '"][data-f="harm"]'); if (harm) harm.disabled = ED.ro || o.min === "";
       const p = $('[data-prev="' + i + '"]'); if (p) p.textContent = previewText(o, i, errs);
+      const bh = $('[data-basishint="' + i + '"]');
+      if (bh) {
+        const show = basisOnly(i);
+        bh.hidden = !show;
+        if (show) bh.innerHTML = 'You changed this duty\u2019s legal basis, but the jurisdiction\u2019s Law or regime is still \u201C' + esc(ED.orig.law) + '\u201D. Lists show the Law or regime. <button type="button" class="btn small" data-act="basis-to-law" data-i="' + i + '">Update Law or regime to match</button>';
+      }
     });
+    const own = d.obl.filter((o) => o.conf && o.conf !== d.conf);
+    d.obl.forEach((o, i) => { const sel = $("#ed-o" + i + "-conf"); if (sel && sel.options[0]) sel.options[0].text = "Same as the jurisdiction (" + CONF[d.conf].tag + ")"; });
+    const note = $("#confNote");
+    if (note) note.textContent = own.length ? own.length + (own.length === 1 ? " duty has" : " duties have") + " its own source check below (" + Array.from(new Set(own.map((o) => CONF[o.conf].tag))).join(", ") + "). Set it to \u201CSame as the jurisdiction\u201D to follow this one." : "";
     $("#edTitle").textContent = d.isNew ? (d.name.trim() || "New jurisdiction") : d.name.trim() || "Rule";
     renderFoot(n);
   }
@@ -2632,6 +2672,14 @@ function fromInputValue(v) {
       return;
     }
     if (act === "propose-back") { ED.confirm = null; refreshEd(); return; }
+    if (act === "basis-to-law") {
+      d.law = d.obl[i].basis.trim();
+      const was = ED.confirm; ED.confirm = null;
+      const inp = $("#ed-law"); if (inp) inp.value = d.law;
+      refreshEd();
+      if (was && was.startsWith("propose")) { ED.confirm = was; renderFoot(0); }
+      return;
+    }
     if (act === "propose-go") return proposeFromEditor(ED.confirm === "propose-reset" ? "reset" : ED.confirm === "propose-del" ? "del" : "edit");
     if (ED.ro) return;
     if (act === "add") { d.obl.push(blankObl()); mountEditor(); const f = $("#ed-o" + (d.obl.length - 1) + "-auth"); if (f) f.focus(); return; }
@@ -2681,14 +2729,18 @@ function fromInputValue(v) {
     let data;
     try { data = JSON.parse(text); } catch (e) { out.innerHTML = '<p class="msg err">That is not valid JSON.</p>'; return; }
     const bad = [];
-    let items = [], meta = { title: "", description: "", author: "", source: "import" }, isProposal = false;
+    let items = [], unchanged = 0, meta = { title: "", description: "", author: "", source: "import" }, isProposal = false;
 
     if (data && data.format === "breach-clock-proposal" && Array.isArray(data.items)) {
       isProposal = true;
       meta = { title: clip(data.title, 160), description: clip(data.description, 1500), author: clip(data.author, 100), source: "file" };
       const p = cleanProposal({ title: "x", items: data.items }, "x");
-      items = p ? p.items : [];
-      if (!items.length) { out.innerHTML = '<p class="msg err">That proposal file has no valid rules.</p>'; return; }
+      const all = p ? p.items : [];
+      if (!all.length) { out.innerHTML = '<p class="msg err">That proposal file has no valid rules.</p>'; return; }
+      all.forEach((it) => {
+        const cur = curDef(it.rid), m = merge3(it.base, it.proposed, cur, it.rid);
+        if (m.conflicts.length || !same(m.build({}).def, cur)) items.push(it); else unchanged++;
+      });
     } else {
       let rules = data && data.rules ? data.rules : data;
       if (Array.isArray(rules)) rules = Object.fromEntries(rules.filter((r) => r && r.id).map((r) => [r.id, r]));
@@ -2699,47 +2751,48 @@ function fromInputValue(v) {
         const def = cleanDef(rules[id], key);
         if (!def) { bad.push(id); return; }
         const cur = curDef(key);
-        if (same(def, cur)) return;
+        if (same(def, cur)) { unchanged++; return; }
         items.push({ rid: key, name: def.name, base: cur, proposed: def });
       });
-      if (!items.length) { out.innerHTML = '<p class="msg">Nothing to import: every rule already matches' + (bad.length ? ". Skipped " + bad.length + " invalid: " + esc(bad.slice(0, 6).join(", ")) : "") + ".</p>"; return; }
     }
+    const skipped = bad.length ? " Skipped " + bad.length + " invalid: " + esc(bad.slice(0, 6).join(", ")) + (bad.length > 6 ? ", ..." : "") + "." : "";
+    if (!items.length) { out.innerHTML = '<p class="msg">Nothing to import: all ' + unchanged + " rule" + (unchanged === 1 ? "" : "s") + " already match the live rules." + skipped + "</p>"; return; }
+
     importPending = { items, meta, isProposal };
+    const nNew = items.filter((i) => !i.base).length, nDel = items.filter((i) => !i.proposed).length, nEdit = items.length - nNew - nDel;
     const detail = items.map((it) => {
       const lines = diffDefs(it.base, it.proposed);
       const cur = curDef(it.rid);
       const moved = it.base && cur && !same(it.base, cur);
-      return "<li><b>" + esc(it.name) + "</b> <span class=\"muted\">(" + itemKind(it).toLowerCase() + (moved ? ", the live rule has changed since" : "") + ")</span><ul class=\"h-changes\">" + lines.slice(0, 4).map((l) => "<li>" + esc(l) + "</li>").join("") + (lines.length > 4 ? "<li class=\"muted\">and " + (lines.length - 4) + " more</li>" : "") + "</ul></li>";
+      return "<li><b>" + esc(it.name) + "</b> <span class=\"muted\">(" + itemKind(it).toLowerCase() + (moved ? ", the live rule has changed since" : "") + ")</span><ul class=\"h-changes\">" + lines.slice(0, 3).map((l) => "<li>" + esc(l) + "</li>").join("") + (lines.length > 3 ? "<li class=\"muted\">and " + (lines.length - 3) + " more</li>" : "") + "</ul></li>";
     }).join("");
     const defaultTitle = meta.title || "Imported rules (" + items.length + ")";
-    out.innerHTML = '<p class="msg">' + (isProposal ? "Proposal file" + (meta.author ? " from " + esc(meta.author) : "") + ": " : "") + items.length + " rule" + (items.length === 1 ? "" : "s") + " would change" + (bad.length ? ". Skipped " + bad.length + " invalid: " + esc(bad.slice(0, 6).join(", ")) + (bad.length > 6 ? ", ..." : "") : "") + ". Nothing changes until it is reviewed" + (canDirect() ? " or you apply it directly" : "") + '.</p>' +
-      '<details class="more" open><summary>What would change</summary><ul class="import-detail">' + detail + "</ul></details>" +
+    const chips = [nEdit ? nEdit + " changed" : "", nNew ? nNew + " new" : "", nDel ? nDel + " to delete" : "", unchanged ? unchanged + " already match" : ""].filter(Boolean).map((t) => '<span class="chip plain">' + t + "</span>").join(" ");
+    out.innerHTML = '<p class="msg">' + (isProposal ? "Proposal file" + (meta.author ? " from " + esc(meta.author) : "") + ". " : "") + "<b>" + items.length + " jurisdiction" + (items.length === 1 ? " has" : "s have") + " changes.</b> You will review each one and accept or reject it. Nothing changes until you publish what you accepted." + skipped + '</p><div class="chips">' + chips + "</div>" +
+      '<details class="more" open><summary>Jurisdictions with changes</summary><ul class="import-detail">' + detail + "</ul></details>" +
       '<div class="propose-form"><div class="field"><label class="lbl" for="impTitle">Proposal title</label><input id="impTitle" type="text" maxlength="160" value="' + esc(defaultTitle) + '"></div>' +
       (Store.mode === "shared" || isProposal ? "" : '<div class="field"><label class="lbl" for="impAuthor">Proposed by</label><input id="impAuthor" type="text" maxlength="100" value="' + esc(savedAuthor()) + '" placeholder="Your name"></div>') +
-      '<span class="actions"><button class="btn primary small" type="button" id="btnStageImport">Stage as proposal</button>' +
-      (canDirect() ? '<button class="btn small" type="button" id="btnApplyImport">Apply ' + items.length + " change" + (items.length === 1 ? "" : "s") + " now</button>" : "") + "</span></div>";
+      '<span class="actions">' + (Store.canEdit
+        ? '<button class="btn primary" type="button" id="btnReviewNow">Review ' + items.length + " jurisdiction" + (items.length === 1 ? "" : "s") + ' one by one</button><button class="btn small" type="button" id="btnStageImport">Stage for later</button>'
+        : '<button class="btn primary" type="button" id="btnStageImport">Submit for review</button>') + "</span></div>";
   }
-  async function stageImport() {
+  async function stageImport(openAfter) {
     if (!importPending) return;
     const { items, meta, isProposal } = importPending;
     const title = $("#impTitle") ? $("#impTitle").value : meta.title;
     const author = isProposal ? meta.author : Store.mode === "shared" ? Store.userId || "" : authorForNew($("#impAuthor") ? $("#impAuthor").value : "");
     try {
-      await submitProposal(title, meta.description, items, meta.source, author);
+      const pid = await submitProposal(title, meta.description, items, meta.source, author);
       importPending = null;
       $("#importText").value = "";
-      $("#importOut").innerHTML = '<p class="msg">Staged as a proposal. Nothing has changed yet. <button class="btn small" type="button" id="btnGoProposals">Open proposals</button></p>';
+      if (openAfter && Store.canEdit) {
+        $("#importOut").innerHTML = "";
+        if (Prop.list.some((p) => p.pid === pid)) { showPane("proposals"); openReview(pid); } else Prop.pendingOpen = pid;
+        $("#proposalsPane").scrollIntoView({ block: "start" });
+      } else {
+        $("#importOut").innerHTML = '<p class="msg">' + (Store.canEdit ? "Staged as a proposal." : "Submitted for an editor to review.") + ' Nothing has changed yet. <button class="btn small" type="button" id="btnGoProposals">Open proposals</button></p>';
+      }
     } catch (e) { $("#importOut").insertAdjacentHTML("afterbegin", '<p class="msg err">' + esc(errText(e)) + "</p>"); }
-  }
-  async function applyImport() {
-    if (!importPending || !canDirect()) return;
-    const list = importPending.items.filter((it) => it.proposed); importPending = null;
-    let done = 0, failed = null;
-    for (const it of list) {
-      try { await commitRule(it.rid, it.proposed, "import"); done++; } catch (e) { failed = e; break; }
-    }
-    $("#importOut").innerHTML = '<p class="msg' + (failed ? " err" : "") + '">' + done + " of " + list.length + " applied." + (failed ? " " + esc(errText(failed)) : "") + "</p>";
-    if (!failed) $("#importText").value = "";
   }
   async function resetAllEdits() {
     const ids = Object.keys(DATA.overrides);
@@ -2792,7 +2845,7 @@ function fromInputValue(v) {
       rd.readAsText(f);
       e.target.value = "";
     });
-    $("#importOut").addEventListener("click", (e) => { if (e.target.id === "btnApplyImport") applyImport(); else if (e.target.id === "btnStageImport") stageImport(); else if (e.target.id === "btnGoProposals") { showPane("proposals"); $("#proposalsPane").scrollIntoView({ block: "start" }); } });
+    $("#importOut").addEventListener("click", (e) => { if (e.target.id === "btnReviewNow") stageImport(true); else if (e.target.id === "btnStageImport") stageImport(false); else if (e.target.id === "btnGoProposals") { showProposalList(); $("#proposalsPane").scrollIntoView({ block: "start" }); } });
     $("#btnResetAll").addEventListener("click", () => {
       if (!Object.keys(DATA.overrides).length) { setBackupMsg("Nothing has been edited."); return; }
       $("#resetAllBox").hidden = false;
@@ -2829,7 +2882,7 @@ function fromInputValue(v) {
   }
 
   /* ---------- diff ---------- */
-  const JFIELDS = { name: "Name", region: "Region", law: "Law", conf: "Source check", note: "Notes", reviewedOn: "Last reviewed", source: "Source" };
+  const JFIELDS = { name: "Name", region: "Region", law: "Law or regime", conf: "Source check", note: "Notes", reviewedOn: "Last reviewed", source: "Source" };
   const OFIELDS = { aud: "who is told", auth: "authority", basis: "legal basis", timing: "deadline", from: "clock starts from", min: "volume threshold", harm: "applies below threshold if harm likely", eff: "takes effect", vol: "voluntary", conf: "source check", cond: "conditions" };
   const OFDEF = { from: "c", min: null, harm: false, eff: "", vol: false, conf: "", cond: "", basis: "" };
 
@@ -2841,6 +2894,7 @@ function fromInputValue(v) {
     return "“" + trunc(v, 90) + "”";
   }
   function fmtO(k, v) {
+    if (k === "conf" && (v === null || v === undefined || v === "")) return "same as the jurisdiction";
     if (v === null || v === undefined || v === "") return "(none)";
     if (k === "aud") return AUD_LABEL[v] || v;
     if (k === "from") return FROM_LABEL[v] || v;
@@ -3095,7 +3149,7 @@ function fromInputValue(v) {
   ================================================================== */
   const LOCAL_PROP_KEY = "breach-clock:proposals:v1";
   const AUTHOR_KEY = "breach-clock:author";
-  const Prop = { list: [], reviews: {}, policy: null, pmap: {}, rmap: {}, openId: null, sel: null, choices: {}, note: "", filter: "open", confirm: null, busy: false, form: null };
+  const Prop = { list: [], reviews: {}, policy: null, pmap: {}, rmap: {}, openId: null, sel: null, choices: {}, note: "", filter: "open", itemFilter: "all", pendingOpen: null, confirm: null, busy: false, form: null };
   let propMem = null;
 
   function fp(v) {
@@ -3113,7 +3167,7 @@ function fromInputValue(v) {
   /* ---------- sanitising (stored data is untrusted) ---------- */
   function cleanProposal(raw, pid) {
     if (!raw || typeof raw !== "object" || !pid) return null;
-    const seen = new Map();
+    const seen = new Map(), legacyMap = new Map();
     (Array.isArray(raw.items) ? raw.items : []).slice(0, 200).forEach((it) => {
       if (!it || typeof it !== "object") return;
       const rid = clip(it.rid, 40);
@@ -3121,12 +3175,15 @@ function fromInputValue(v) {
       const base = it.base ? cleanDef(it.base, rid) : null;
       const proposed = it.proposed ? cleanDef(it.proposed, rid) : null;
       if (!base && !proposed) return;
-      seen.set(rid, { rid, name: clip(it.name, 120) || (proposed || base).name, base, proposed });
+      const name = clip(it.name, 120) || (proposed || base).name;
+      seen.set(rid, { rid, name, base, proposed });
+      legacyMap.set(rid, { rid, name, base: it.base ? cleanDef(it.base, rid, true) : null, proposed: it.proposed ? cleanDef(it.proposed, rid, true) : null });
     });
     const items = Array.from(seen.values());
     if (!items.length) return null;
+    const legacy = Array.from(legacyMap.values());
     return {
-      pid, items, hash: fp(items),
+      pid, items, hash: fp(items), hashOld: fp(legacy),
       title: clip(raw.title, 160).trim() || "Untitled proposal",
       description: clip(raw.description, 1500).trim(),
       author: clip(raw.author, 100),
@@ -3167,6 +3224,10 @@ function fromInputValue(v) {
     Prop.reviews = rv;
     Prop.policy = Prop.rawPolicy && typeof Prop.rawPolicy.requireReview === "boolean" ? Prop.rawPolicy.requireReview : null;
     if (Prop.openId && !Prop.list.some((p) => p.pid === Prop.openId)) { Prop.openId = null; Prop.sel = null; }
+    if (Prop.pendingOpen && Prop.list.some((p) => p.pid === Prop.pendingOpen)) {
+      const id = Prop.pendingOpen; Prop.pendingOpen = null;
+      showPane("proposals"); openReview(id);
+    }
     renderProposalsIfVisible();
     updateEditorGate();
   }
@@ -3375,12 +3436,12 @@ function fromInputValue(v) {
   function itemState(p, it) {
     const rv = reviewOf(p, it);
     if (!rv) return "pending";
-    if (rv.hash !== p.hash) return "voided";
+    if (rv.hash !== p.hash && rv.hash !== p.hashOld) return "voided";
     if (rv.published) return "published";
     if (rv.status === "rejected") return "rejected";
     return rv.currentFp === fp(curDef(it.rid)) ? "approved" : "stale";
   }
-  const STATE_LABEL = { pending: "Pending", voided: "Pending (edited)", approved: "Approved", stale: "Needs re-review", rejected: "Rejected", published: "Published" };
+  const STATE_LABEL = { pending: "Pending", voided: "Pending (edited)", approved: "Accepted", stale: "Needs re-review", rejected: "Rejected", published: "Published" };
   const STATE_CHIP = { pending: "plain", voided: "verify", approved: "aud", stale: "verify", rejected: "plain", published: "aud" };
   const isOpenState = (s) => s === "pending" || s === "voided" || s === "approved" || s === "stale";
   const propIsOpen = (p) => p.items.some((it) => isOpenState(itemState(p, it)));
@@ -3420,7 +3481,7 @@ function fromInputValue(v) {
 
   /* ---------- review view ---------- */
   function openReview(pid) {
-    Prop.openId = pid; Prop.confirm = null;
+    Prop.openId = pid; Prop.confirm = null; Prop.itemFilter = "all";
     const p = Prop.list.find((x) => x.pid === pid);
     const first = p.items.find((it) => isOpenState(itemState(p, it))) || p.items[0];
     selectItem(first.rid);
@@ -3432,8 +3493,8 @@ function fromInputValue(v) {
     const p = Prop.list.find((x) => x.pid === Prop.openId);
     const it = p && p.items.find((x) => x.rid === rid);
     const rv = it && reviewOf(p, it);
-    Prop.choices = rv && rv.hash === p.hash ? Object.assign({}, rv.choices) : {};
-    Prop.note = rv && rv.hash === p.hash ? rv.note : "";
+    Prop.choices = rv && (rv.hash === p.hash || rv.hash === p.hashOld) ? Object.assign({}, rv.choices) : {};
+    Prop.note = rv && (rv.hash === p.hash || rv.hash === p.hashOld) ? rv.note : "";
   }
 
   function tableHTML(m, editable) {
@@ -3455,6 +3516,9 @@ function fromInputValue(v) {
     return '<div class="tbl-wrap"><table class="rp-table rv-table"><thead><tr>' + head.map((h) => "<th>" + h + "</th>").join("") + "</tr></thead><tbody>" + body + "</tbody></table></div>";
   }
 
+  const TODO = (s) => s === "pending" || s === "voided" || s === "stale";
+  const ACCEPTED = (s) => s === "approved" || s === "published";
+
   function renderReview() {
     const p = Prop.list.find((x) => x.pid === Prop.openId);
     if (!p) return;
@@ -3464,43 +3528,55 @@ function fromInputValue(v) {
     const m = merge3(it.base, it.proposed, cur, it.rid);
     const st = itemState(p, it), rv = reviewOf(p, it);
     const states = p.items.map((x) => itemState(p, x));
-    const nApproved = states.filter((s) => s === "approved").length;
-    const nOpen = states.filter(isOpenState).length;
+    const cnt = (fn) => states.filter(fn).length;
+    const nAcc = cnt((x) => x === "approved"), nRej = cnt((x) => x === "rejected"), nPub = cnt((x) => x === "published"), nTodo = cnt(TODO);
+    const idx = p.items.findIndex((x) => x.rid === it.rid);
+    const f = Prop.itemFilter;
+    const show = (x) => f === "all" || (f === "todo" && TODO(x)) || (f === "accepted" && ACCEPTED(x)) || (f === "rejected" && x === "rejected");
 
+    const filters = [["all", "All", p.items.length], ["todo", "To review", nTodo], ["accepted", "Accepted", nAcc + nPub], ["rejected", "Rejected", nRej]]
+      .map((x) => '<button type="button" class="chip-btn' + (f === x[0] ? " on" : "") + '" data-pact="filter" data-f="' + x[0] + '" aria-pressed="' + (f === x[0]) + '">' + x[1] + " (" + x[2] + ")</button>").join("");
     const list = p.items.map((x, i) => {
-      const s = states[i];
-      const mm = isOpenState(s) ? merge3(x.base, x.proposed, curDef(x.rid), x.rid) : null;
+      const s2 = states[i];
+      if (!show(s2)) return "";
+      const mm = isOpenState(s2) ? merge3(x.base, x.proposed, curDef(x.rid), x.rid) : null;
+      const ch = diffDefs(x.base, x.proposed);
+      const sum = ch.length ? trunc(ch[0], 72) + (ch.length > 1 ? " (+" + (ch.length - 1) + " more)" : "") : "No effective change";
       return '<li><button type="button" class="rv-item' + (x.rid === it.rid ? " on" : "") + '" data-pact="select" data-rid="' + esc(x.rid) + '"><span class="nm">' + esc(x.name) + '</span><span class="muted">' + itemKind(x) + "</span>" +
-        '<span class="chip ' + STATE_CHIP[s] + '">' + esc(STATE_LABEL[s]) + "</span>" + (mm && mm.conflicts.length ? '<span class="chip verify">Conflict</span>' : "") + "</button></li>";
-    }).join("");
+        '<span class="chip ' + STATE_CHIP[s2] + '">' + esc(STATE_LABEL[s2]) + "</span>" + (mm && mm.conflicts.length ? '<span class="chip verify">Conflict</span>' : "") + '<span class="rv-sum">' + esc(sum) + "</span></button></li>";
+    }).join("") || '<li class="muted">Nothing in this view.</li>';
 
+    const when = (iso) => (iso ? fmtDT(new Date(iso)) : "");
     let banner = "";
-    if (st === "published") banner = '<p class="msg">Published ' + esc(rv.publishedAt ? fmtDT(new Date(rv.publishedAt)) : "") + " by " + esc(whoLabel(rv.publishedBy) || "an editor") + ".</p>";
-    else if (st === "stale") banner = '<p class="msg warn">This rule changed after it was approved, so the approval no longer applies. Review it again.</p>';
+    if (st === "published") banner = '<p class="msg">Published ' + esc(when(rv.publishedAt)) + " by " + esc(whoLabel(rv.publishedBy) || "an editor") + ".</p>";
+    else if (st === "stale") banner = '<p class="msg warn">This rule changed after you accepted it, so the acceptance no longer applies. Review it again.</p>';
     else if (st === "voided") banner = '<p class="msg warn">This proposal was edited after it was reviewed, so the earlier decision was cleared.</p>';
-    else if (st === "approved") banner = '<p class="msg">Approved by ' + esc(whoLabel(rv.by) || "an editor") + " " + esc(rv.at ? fmtDT(new Date(rv.at)) : "") + ". It is not live until published.</p>";
-    else if (st === "rejected") banner = '<p class="msg">Rejected by ' + esc(whoLabel(rv.by) || "an editor") + " " + esc(rv.at ? fmtDT(new Date(rv.at)) : "") + ".</p>";
-    const state = !m.clean ? (m.conflicts.length ? '<p class="msg warn"><b>Conflict.</b> This rule changed after the proposal was drafted. Compare the three versions and choose a result for each conflicting row.</p>' : '<p class="msg">This rule changed after the proposal was drafted, but the changes do not overlap. They merge cleanly.</p>') : '<p class="muted">No one has changed this rule since the proposal was drafted.</p>';
+    else if (st === "approved") banner = '<p class="msg">Accepted by ' + esc(whoLabel(rv.by) || "an editor") + " " + esc(when(rv.at)) + ". It is not live until published.</p>";
+    else if (st === "rejected") banner = '<p class="msg">Rejected by ' + esc(whoLabel(rv.by) || "an editor") + " " + esc(when(rv.at)) + ".</p>";
+    const state = !m.clean
+      ? (m.conflicts.length ? '<p class="msg warn"><b>Conflict.</b> This rule changed after the proposal was drafted. Compare the three versions and choose a result for each conflicting row.</p>' : '<p class="msg">This rule changed after the proposal was drafted, but the changes do not overlap. They merge cleanly.</p>')
+      : '<p class="muted">No one has changed this rule since the proposal was drafted.</p>';
 
-    const prevHTML = '<div class="rv-result" id="rvResult"></div>';
+    const canAct = editable && st !== "published";
     const decided = st === "approved" || st === "rejected";
-    const detail = '<h4>' + esc(it.name) + (it.rid.includes("-") ? "" : '<span class="iso"> ' + esc(it.rid) + "</span>") + ' <span class="chip plain">' + itemKind(it) + "</span></h4>" + banner + state + tableHTML(m, editable && st !== "published") + prevHTML +
-      '<div class="field"><label class="lbl" for="rvNote">Reviewer note</label><textarea id="rvNote" rows="2" maxlength="1000"' + (editable && st !== "published" ? "" : " disabled") + ">" + esc(Prop.note) + "</textarea></div>" +
-      '<div class="actions rv-actions">' + (editable && st !== "published" ? '<button class="btn primary" type="button" data-pact="approve" id="rvApprove">Approve this rule</button><button class="btn" type="button" data-pact="reject">Reject</button>' + (decided || st === "stale" ? '<button class="btn" type="button" data-pact="clear">Clear decision</button>' : "") : "") +
-      '<button class="btn" type="button" data-pact="next">Next to review</button></div>' +
-      '<p class="muted">Approving or rejecting does not change the live rules. Only publishing does.</p>';
+    const detail = '<p class="eyebrow">Change ' + (idx + 1) + " of " + p.items.length + "</p><h4>" + esc(it.name) + (it.rid.includes("-") ? "" : '<span class="iso"> ' + esc(it.rid) + "</span>") + ' <span class="chip plain">' + itemKind(it) + "</span></h4>" + banner + state + tableHTML(m, canAct) + '<div class="rv-result" id="rvResult"></div>' +
+      '<div class="field"><label class="lbl" for="rvNote">Reviewer note</label><textarea id="rvNote" rows="2" maxlength="1000"' + (canAct ? "" : " disabled") + ">" + esc(Prop.note) + "</textarea></div>" +
+      '<div class="actions rv-actions">' + (canAct ? '<button class="btn primary" type="button" data-pact="approve" id="rvApprove">Accept this change</button><button class="btn" type="button" data-pact="reject" id="rvReject">Reject this change</button>' + (decided || st === "stale" ? '<button class="btn" type="button" data-pact="clear">Clear decision</button>' : "") : "") +
+      '<span class="rv-nav"><button class="btn" type="button" data-pact="prev" aria-label="Previous change">← Previous</button><button class="btn" type="button" data-pact="next" aria-label="Next change">Next →</button>' + (nTodo ? '<button class="btn" type="button" data-pact="next-todo">Next to review</button>' : "") + "</span></div>" +
+      '<p class="muted">Accepting or rejecting does not change the live rules. Only publishing does.' + (canAct ? " Keys: A accept, R reject, ← → move." : "") + "</p>";
 
     let publish = "";
     if (Prop.confirm === "publish") {
       const rows = p.items.filter((x) => itemState(p, x) === "approved").map((x) => { const r = reviewOf(p, x); const ch = diffDefs(curDef(x.rid), r.resolved); return "<li><b>" + esc(x.name) + "</b>: " + (ch.length ? esc(ch.slice(0, 3).join("; ") + (ch.length > 3 ? "; and " + (ch.length - 3) + " more" : "")) : "no effective change") + "</li>"; }).join("");
-      publish = '<div class="confirm-box rv-publish"><div><p role="alert"><b>Publish ' + nApproved + " approved change" + (nApproved === 1 ? "" : "s") + " to the live rules?</b></p><ul>" + rows + '</ul></div><span class="actions"><button class="btn primary" type="button" data-pact="publish-yes"' + (Prop.busy ? " disabled" : "") + '>Publish now</button><button class="btn" type="button" data-pact="publish-no">Not yet</button></span></div>';
+      publish = '<div class="confirm-box rv-publish"><div><p role="alert"><b>Publish ' + nAcc + " accepted change" + (nAcc === 1 ? "" : "s") + " to the live rules?</b></p><ul>" + rows + '</ul></div><span class="actions"><button class="btn primary" type="button" data-pact="publish-yes"' + (Prop.busy ? " disabled" : "") + '>Publish now</button><button class="btn" type="button" data-pact="publish-no">Not yet</button></span></div>';
     }
-    const nReview = states.filter((x) => x === "pending" || x === "voided" || x === "stale").length;
-    const bar = '<div class="rv-bar"><span class="chips"><span class="chip plain">' + nReview + " to review</span><span class=\"chip aud\">" + nApproved + " approved</span><span class=\"chip plain\">" + states.filter((s) => s === "rejected").length + " rejected</span><span class=\"chip plain\">" + states.filter((s) => s === "published").length + " published</span></span>" +
-      (editable ? '<button class="btn primary small" type="button" data-pact="publish"' + (nApproved ? "" : " disabled") + ">Publish " + nApproved + " approved</button>" : '<span class="muted">Only editors can approve and publish.</span>') + "</div>";
+    const done = nTodo === 0 && nAcc + nRej + nPub > 0;
+    const finished = done ? '<p class="msg rv-done">All ' + p.items.length + " change" + (p.items.length === 1 ? "" : "s") + " reviewed: " + (nAcc + nPub) + " accepted, " + nRej + " rejected." + (nAcc ? " Publish the accepted changes when you are ready." : "") + "</p>" : "";
+    const bar = '<div class="rv-bar"><span class="chips"><span class="chip plain">' + nTodo + ' to review</span><span class="chip aud">' + nAcc + ' accepted</span><span class="chip plain">' + nRej + ' rejected</span><span class="chip plain">' + nPub + " published</span></span>" +
+      (editable ? '<button class="btn primary small" type="button" data-pact="publish"' + (nAcc ? "" : " disabled") + ">Publish " + nAcc + " accepted</button>" : '<span class="muted">Only editors can accept, reject and publish.</span>') + "</div>";
 
-    $("#propReview").innerHTML = '<div class="rv"><div class="rv-head"><button class="btn small" type="button" data-pact="back">← All proposals</button><h3>' + esc(p.title) + '</h3><p class="muted">by ' + esc(authorLabel(p)) + " · " + esc(p.createdAt ? fmtDT(new Date(p.createdAt)) : "") + "</p>" + (p.description ? "<p>" + esc(p.description) + "</p>" : "") + bar + publish +
-      '<p id="rvFlash" class="flash" role="status" hidden></p></div><div class="rv-body"><ol class="rv-items" aria-label="Rules in this proposal">' + list + '</ol><div class="rv-detail">' + detail + "</div></div></div>";
+    $("#propReview").innerHTML = '<div class="rv"><div class="rv-head"><button class="btn small" type="button" data-pact="back">← All proposals</button><h3>' + esc(p.title) + '</h3><p class="muted">by ' + esc(authorLabel(p)) + " · " + esc(when(p.createdAt)) + "</p>" + (p.description ? "<p>" + esc(p.description) + "</p>" : "") + finished + bar + publish +
+      '<p id="rvFlash" class="flash" role="status" hidden></p></div><div class="rv-body"><div class="rv-side"><div class="rv-filters" role="group" aria-label="Show">' + filters + '</div><ol class="rv-items" aria-label="Changes in this proposal">' + list + '</ol></div><div class="rv-detail">' + detail + "</div></div></div>";
     refreshReviewDynamic();
   }
 
@@ -3521,6 +3597,17 @@ function fromInputValue(v) {
     }
     const btn = $("#rvApprove");
     if (btn) btn.disabled = r.unresolved.length > 0 || Prop.busy;
+  }
+
+  function stepReview(act) {
+    const p = Prop.list.find((x) => x.pid === Prop.openId); if (!p) return;
+    const n = p.items.length, idx = p.items.findIndex((x) => x.rid === Prop.sel);
+    let target;
+    if (act === "prev") target = p.items[(idx - 1 + n) % n];
+    else if (act === "next") target = p.items[(idx + 1) % n];
+    else target = p.items.slice(idx + 1).concat(p.items.slice(0, idx + 1)).find((x) => TODO(itemState(p, x))) || p.items[(idx + 1) % n];
+    selectItem(target.rid); renderReview();
+    const el = $('.rv-item.on'); if (el) el.scrollIntoView({ block: "nearest" });
   }
 
   function flashProp(text, isErr) {
@@ -3549,7 +3636,7 @@ function fromInputValue(v) {
       const nxt = p.items.find((x) => x.rid !== it.rid && isOpenState(itemState(p, x)) && itemState(p, x) !== "approved");
       if (nxt) selectItem(nxt.rid);
       renderProposals();
-      flashProp(status === "approved" ? "Approved. It goes live when you publish." : "Rejected.");
+      flashProp(status === "approved" ? "Accepted. It goes live when you publish." : "Rejected.");
     } catch (e) { Prop.busy = false; renderProposals(); flashProp(errText(e), true); }
   }
   async function publishApproved() {
@@ -3580,6 +3667,10 @@ function fromInputValue(v) {
     if (b) b.textContent = "Proposals" + (nOpen ? " (" + nOpen + ")" : "");
     if (inReview) renderReview(); else renderPropList();
   }
+  function showProposalList() {
+    Prop.openId = null; Prop.sel = null; Prop.confirm = null;
+    showPane("proposals");
+  }
   function renderProposalsIfVisible() {
     const b = $("#paneProposals");
     if (b) { const nOpen = Prop.list.filter(propIsOpen).length; b.textContent = "Proposals" + (nOpen ? " (" + nOpen + ")" : ""); }
@@ -3599,6 +3690,7 @@ function fromInputValue(v) {
     return '<div class="propose-form"><div class="field"><label class="lbl" for="pfTitle">Proposal title</label><input id="pfTitle" type="text" maxlength="160" value="' + esc(f.title != null ? f.title : defaultTitle) + '"></div>' +
       (Store.mode === "shared" ? "" : '<div class="field"><label class="lbl" for="pfAuthor">Proposed by</label><input id="pfAuthor" type="text" maxlength="100" value="' + esc(f.author != null ? f.author : savedAuthor()) + '" placeholder="Your name"></div>') +
       '<div class="field"><label class="lbl" for="pfNote">Why (optional)</label><textarea id="pfNote" rows="2" maxlength="1500">' + esc(f.note || "") + '</textarea></div>' +
+      (ED.d.obl.some((o, i) => basisOnly(i)) ? '<p class="msg warn">Heads-up: you changed a duty\u2019s legal basis, but not the jurisdiction\u2019s Law or regime, which is the line shown in lists. ' + ED.d.obl.map((o, i) => basisOnly(i) ? '<button type="button" class="btn small" data-act="basis-to-law" data-i="' + i + '">Update Law or regime to \u201C' + esc(trunc(o.basis.trim(), 40)) + '\u201D too</button>' : '').join(' ') + '</p>' : '') +
       '<span class="actions"><button class="btn primary" type="button" data-act="propose-go">Submit proposal</button><button class="btn" type="button" data-act="propose-back">Back</button></span></div>';
   }
 
@@ -3621,14 +3713,14 @@ function fromInputValue(v) {
       await submitProposal(title || (mode === "reset" ? "Reset " + nm : mode === "del" ? "Delete " + nm : (base ? "Update " : "Add ") + nm), note, [{ rid, name: nm, base, proposed }], "editor", authorForNew(author));
       ED.busy = false;
       closeEditor(true);
-      showPane("proposals");
-      flashProp("Proposal submitted. An editor can review it here.");
+      showProposalList();
+      flashProp("Proposal submitted. " + (Store.canEdit ? "Open it below to review it." : "An editor can review it here."));
     } catch (e) { ED.busy = false; ED.confirm = null; refreshEd(); $("#edMsgs").innerHTML = '<p class="msg err">' + esc(errText(e)) + "</p>"; }
   }
 
   /* ---------- wiring ---------- */
   function initProposalsUI() {
-    $("#paneProposals").addEventListener("click", () => showPane("proposals"));
+    $("#paneProposals").addEventListener("click", showProposalList);
     $("#pFilter").addEventListener("change", (e) => { Prop.filter = e.target.value; renderPropList(); });
     $("#pReqReview").addEventListener("change", async (e) => {
       const v = e.target.checked;
@@ -3668,13 +3760,8 @@ function fromInputValue(v) {
         if (it) { try { await reviewDel(p.pid, it.rid); Prop.choices = {}; Prop.note = ""; renderProposals(); } catch (err) { flashProp(errText(err), true); } }
         return;
       }
-      if (act === "next") {
-        const p = Prop.list.find((x) => x.pid === Prop.openId); if (!p) return;
-        const idx = p.items.findIndex((x) => x.rid === Prop.sel);
-        const order = p.items.slice(idx + 1).concat(p.items.slice(0, idx + 1));
-        const nxt = order.find((x) => { const s = itemState(p, x); return s === "pending" || s === "voided" || s === "stale"; }) || order[0];
-        selectItem(nxt.rid); return renderReview();
-      }
+      if (act === "filter") { Prop.itemFilter = b.dataset.f; return renderReview(); }
+      if (act === "prev" || act === "next" || act === "next-todo") return stepReview(act);
       if (act === "all-theirs" || act === "all-current") {
         const p = Prop.list.find((x) => x.pid === Prop.openId); const it = p && p.items.find((x) => x.rid === Prop.sel); if (!it) return;
         const m = merge3(it.base, it.proposed, curDef(it.rid), it.rid);
@@ -3691,6 +3778,16 @@ function fromInputValue(v) {
       if (r) { Prop.choices[r.dataset.ckey] = r.value; refreshReviewDynamic(); }
     });
     $("#propReview").addEventListener("input", (e) => { if (e.target.id === "rvNote") Prop.note = e.target.value; });
+    document.addEventListener("keydown", (e) => {
+      if (S.view !== "rules" || $("#propReview").hidden || $("#proposalsPane").hidden) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
+      if (e.key === "ArrowRight") { e.preventDefault(); stepReview("next"); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); stepReview("prev"); }
+      else if (e.key === "a" || e.key === "A") { const b = $("#rvApprove"); if (b && !b.disabled) { e.preventDefault(); decide("approved"); } }
+      else if (e.key === "r" || e.key === "R") { const b = $("#rvReject"); if (b && !b.disabled) { e.preventDefault(); decide("rejected"); } }
+    });
   }
 
   /* ==================================================================
