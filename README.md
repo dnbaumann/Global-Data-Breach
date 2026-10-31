@@ -2,7 +2,7 @@
 
 A single-page tool that works out when a personal-data breach must be notified, jurisdiction by jurisdiction.
 
-Enter three dates (when the incident happened, when you confirmed it, and when you notified or plan to). Breach Clock computes the notification deadline for 208 jurisdictions, lets you pick the ones that apply, asks how many people are affected in each, and then shows the deadlines as a color-coded list and a timeline. A second view lists every rule behind those dates and lets you edit them, with a full history of every change and a review workflow for changes from several people. A third produces a printable report.
+Enter three dates (when the incident happened, when you confirmed it, and when you notified or plan to). Breach Clock computes the notification deadline for 208 jurisdictions, lets you pick the ones that apply, asks how many people are affected in each, and then shows the deadlines as a color-coded list and a timeline. A second view lists every rule behind those dates and lets you edit them, with a full history of every change, a review workflow for changes from several people, and a verification dashboard that shows what to check next. A third produces a printable report.
 
 > **Not legal advice.** Breach Clock is a planning aid. The rule set is a reference dataset (snapshot: October 2026) that needs review by counsel before anyone relies on it. See [Accuracy and limits](#accuracy-and-limits).
 
@@ -87,6 +87,21 @@ In the Rules view, switch from **Rules** to **History**. Every edit, new jurisdi
 - **Clear.** Deletes the log (rules are not changed). Only offered to people who can edit.
 
 History is kept in the same place as the rules: in this browser's local storage in the standalone app (up to 1,000 entries), or shared with everyone in the Claude artifact.
+
+### Verification dashboard
+
+In the Rules view, switch to **Verification** to see where every rule stands and what to verify next.
+
+- **Overview.** Counts and a progress bar for Checked, Established and Verify, plus a by-region table. A jurisdiction is only as strong as its weakest duty, so one duty still marked Verify keeps the jurisdiction at Verify.
+- **Re-verify dates.** A Checked rule is due for another look when its **Last reviewed** date is older than the review interval (6 months by default, and you can change it on the dashboard). Rules marked Checked without a review date count as reviewed at the dataset snapshot (4 October 2026). Rules due within 30 days show as "Re-verify soon".
+- **Worklist.** Filter by what needs doing, in priority order: verify rules with a fixed deadline (they drive computed dates), re-verify out-of-date ones, verify rules that only say "without undue delay", upgrade Established rules to Checked, and research jurisdictions with nothing recorded. You can also filter by region, search, or show only your own assignments.
+- **Verify...** opens the rule in the editor already set to Checked with today's review date, with the cursor in the Source field. Add your source, then save or propose it as usual.
+- **Assignments.** Editors can assign a rule to themselves or, in the shared Claude artifact, to a colleague they find by name. In the standalone app you type a name. Anyone can see who owns what.
+- **Export worklist (CSV)** saves what is currently shown.
+
+### Business-day calendars
+
+Deadlines counted in business days follow a calendar for that jurisdiction instead of skipping weekends only: Brazil, Colombia, Costa Rica, Belarus, Egypt (Friday and Saturday weekend) and US federal holidays for the SEC. Every other jurisdiction uses Monday to Friday. Each deadline shows which calendar was used and which holidays it skipped, in the results, the report and the editor preview. In the editor, a jurisdiction that counts business days has a **Business-day calendar** setting and an **Extra non-working days** box (one date per line, optionally followed by a name) for holidays the calendar misses or dates that need correcting. These changes go through proposals, review and history like any other field. See [Accuracy and limits](#accuracy-and-limits) for what the calendars do not cover.
 
 ### Importing and merging, one jurisdiction at a time
 
@@ -180,7 +195,7 @@ The same file works on any static host (Netlify, S3, an internal web server) or 
   - **Verify:** recent, ambiguous or thinly sourced. Confirm before relying on it.
 - **"No deadline identified" is not "no obligation".** About half the jurisdictions in the dataset have no fixed deadline recorded. Many have laws the dataset does not cover well.
 - **Not modelled:** sector regimes such as NIS2, DORA, GLBA and bank or telecom regulator rules, contractual deadlines, and law-enforcement delay exceptions.
-- **Business days** skip Saturdays and Sundays only. Local public holidays are not applied. Day counts keep the same clock time as their starting point.
+- **Business days** follow a calendar per jurisdiction: weekends plus public holidays for Brazil, Colombia, Costa Rica, Belarus, Egypt (Friday and Saturday weekend) and US federal holidays for the SEC, and Monday to Friday elsewhere. Each deadline shows the calendar used and the holidays it skipped. Holidays are generated by rule, so check them against your own sources: Costa Rica moves some holidays in some years, Belarus announces working-day transfers, Brazil's optional days (Carnival, Corpus Christi) are not included, and Egypt's Islamic holidays are approximate and only included for 2025 to 2028. Add or correct days as **extra non-working days** on the jurisdiction in the Rules view. Day counts keep the same clock time as their starting point.
 - **One notification date.** The calculator treats your notification date as the day both regulators and individuals are told. If you notify them on different days, check each duty on its own.
 - **Counts are your input.** The tool applies thresholds to the numbers you enter. It does not decide whether a breach is reportable (harm, risk, or materiality tests are listed as conditions for you to judge).
 

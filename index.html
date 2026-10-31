@@ -539,6 +539,38 @@ body.drawer-open { overflow: hidden; }
 .rv-done { border-color: var(--st-met); }
 .rv-detail .eyebrow { margin: 0; }
 
+/* ---------------- verification dashboard ---------------- */
+.vf-bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--surface-2); min-width: 120px; }
+#vfOverall .vf-bar { height: 16px; }
+.vf-seg { display: block; height: 100%; background: var(--c); }
+.months-input { width: 64px; min-height: 32px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: 13px; margin: 0 4px; }
+.vf-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.vf-row { display: grid; grid-template-columns: minmax(180px, 1.3fr) minmax(150px, 1fr) minmax(0, 1.6fr) minmax(130px, 1fr) auto; gap: 8px 14px; align-items: start; padding: 10px 14px; background: var(--surface); }
+.vf-row + .vf-row { border-top: 1px solid var(--line-2); }
+.vf-main { display: grid; min-width: 0; }
+.vf-main .nm { font-weight: 700; overflow-wrap: anywhere; }
+.vf-main .iso { font-family: var(--font-mono); font-size: 11px; font-weight: 400; color: var(--ink-3); margin-left: 6px; }
+.vf-main .sm, .vf-state .sm { font-size: 12px; color: var(--ink-3); overflow-wrap: anywhere; }
+.vf-state { display: grid; gap: 3px; justify-items: start; }
+.vf-duties .chip { white-space: normal; }
+.vf-asg { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.vf-act { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.vf-panel { grid-column: 1 / -1; display: grid; gap: 8px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 8px; max-width: 460px; }
+.vf-found { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.cal-block { display: grid; gap: 6px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 8px; }
+@media (max-width: 860px) {
+  .vf-row { grid-template-columns: minmax(0, 1fr); }
+  .vf-act { justify-content: flex-start; }
+}
+.pane-switch { max-width: 100%; flex-wrap: wrap; }
+.pane-switch .pane-btn { flex: 1 1 auto; }
+.inline-check .months-input { width: 64px; height: auto; min-height: 32px; accent-color: auto; }
+@media (max-width: 560px) {
+  .pane-switch .pane-btn { padding: 7px 12px; }
+  .pane-switch .pane-btn:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .pane-switch .pane-btn:nth-child(3) { border-left: 0; }
+}
+
 </style>
 </head>
 <body>
@@ -745,6 +777,7 @@ body.drawer-open { overflow: hidden; }
     <div class="pane-switch" role="group" aria-label="Rules or history">
       <button class="pane-btn" type="button" id="paneRules" aria-pressed="true">Rules</button>
       <button class="pane-btn" type="button" id="paneProposals" aria-pressed="false">Proposals</button>
+      <button class="pane-btn" type="button" id="paneVerify" aria-pressed="false">Verification</button>
       <button class="pane-btn" type="button" id="paneHistory" aria-pressed="false">History</button>
     </div>
 
@@ -822,6 +855,34 @@ body.drawer-open { overflow: hidden; }
       <div id="propReview" hidden></div>
     </div>
 
+    <div id="verifyPane" class="pane" hidden>
+      <p class="muted">Where each rule stands, what to verify next, and when a Checked rule is due for another look. A rule is only as strong as its weakest duty. Rules marked Checked without a review date count as reviewed at the dataset snapshot (4 October 2026).</p>
+      <div class="tiles" id="vfTiles"></div>
+      <div id="vfOverall"></div>
+      <ul class="legend" id="vfLegend"></ul>
+      <h3>By region</h3>
+      <div class="tbl-wrap" id="vfRegions"></div>
+      <div class="rules-bar">
+        <label class="inline-check" for="vfMonths">Re-verify Checked rules every <input id="vfMonths" type="number" min="1" max="60" step="1" class="months-input" inputmode="numeric"> months</label>
+        <span class="muted">Shared with everyone who uses this copy.</span>
+      </div>
+      <h3>Worklist</h3>
+      <div class="rv-filters" id="vfChips" role="group" aria-label="Show"></div>
+      <div class="rules-tools">
+        <div class="field grow"><label class="lbl" for="vfQ">Search</label><input id="vfQ" type="search" placeholder="Name, code or law" autocomplete="off"></div>
+        <div class="field"><label class="lbl" for="vfRegion">Region</label><select id="vfRegion"></select></div>
+      </div>
+      <div class="rules-bar">
+        <label class="inline-check"><input type="checkbox" id="vfMine"> Assigned to me</label>
+        <span class="grow"></span>
+        <button class="btn small" id="btnExportWork" type="button">Export worklist (CSV)</button>
+      </div>
+      <p id="vfCount" class="muted" aria-live="polite"></p>
+      <p id="vfMsg" class="muted" aria-live="polite"></p>
+      <div id="vfCopy"></div>
+      <ul class="vf-list" id="vfList"></ul>
+    </div>
+
     <div id="historyPane" class="pane" hidden>
       <p class="muted">Every edit, reset, import and restore is logged here with what changed. Restore puts a rule back to the version before a change, and that is logged too.</p>
       <div class="rules-tools">
@@ -874,7 +935,7 @@ body.drawer-open { overflow: hidden; }
     <ul>
       <li>Not legal advice. Laws change, and many have exceptions, thresholds and sector rules this tool does not model (for example NIS2, DORA, GLBA and bank regulators). Confirm every jurisdiction with counsel.</li>
       <li>Each entry is tagged <b>Checked</b> (cross-checked against current published sources in October 2026), <b>Established</b> (settled law, not re-checked) or <b>Verify</b> (recent, ambiguous or thinly sourced). Jurisdictions with no entry are shown as having no fixed deadline identified, which is not the same as having no obligation.</li>
-      <li>Business days exclude Saturdays and Sundays only. Local public holidays are not applied. Day counts keep the same clock time as the starting point.</li>
+      <li>Business days follow each jurisdiction's calendar: weekends and public holidays where one is set (Brazil, Colombia, Costa Rica, Belarus, Egypt and US federal holidays for the SEC), and Monday to Friday otherwise. Each deadline shows the calendar used and the holidays it skipped. Holidays can be corrected in the Rules view. Day counts keep the same clock time as the starting point.</li>
       <li>The notification date is treated as the date both regulators and individuals are told. If you notify them on different days, check each duty on its own.</li>
       <li id="noteStore">Incident dates and affected counts never leave this page and are not saved. Only edits to the rules are stored: with the shared rules, in this artifact for everyone who can open it; otherwise in this browser.</li>
     </ul>
@@ -1388,7 +1449,7 @@ function evaluate(j, o, ctx) {
     kind: t.asap ? "asap" : "fixed",
     deadline: null, status: "info", applicability: "applies",
     remainingMs: null, plan: null, slackMs: null, elapsedMs: null,
-    countUnknown: false,
+    countUnknown: false, skipped: [], calName: "",
     conf: o.conf || j.conf,
   };
 
@@ -1419,7 +1480,11 @@ function evaluate(j, o, ctx) {
     return r;
   }
 
-  r.deadline = addTime(trigger, t.n, t.u);
+  if (t.u === "bd") {
+    const cal = calOf(j);
+    const res = addBusinessDays(trigger, t.n, cal);
+    r.deadline = res.date; r.skipped = res.skipped; r.calName = cal.def.name;
+  } else r.deadline = addTime(trigger, t.n, t.u);
 
   if (fromKey !== "n" && notified) {
     r.slackMs = r.deadline - ctx.notification;
@@ -1508,6 +1573,152 @@ function fromInputValue(v) {
   if (!v) return null;
   const d = new Date(v);
   return isNaN(d.getTime()) ? null : d;
+}
+
+/* ------------------------------------------------------------------
+   Business-day calendars. Public holidays are generated for any year.
+   Islamic holidays depend on moon sighting, so they come from a small
+   table of approximate dates (2025 to 2028).
+------------------------------------------------------------------- */
+const dkey = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const ymd = (y, m, d) => new Date(y, m - 1, d);
+const addDays = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; };
+
+function westernEaster(y) {
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+  return ymd(y, month, day);
+}
+function orthodoxEaster(y) {
+  const a = y % 4, b = y % 7, c = y % 19, d = (19 * c + 15) % 30, e = (2 * a + 4 * b - d + 34) % 7;
+  const month = Math.floor((d + e + 114) / 31), day = ((d + e + 114) % 31) + 1;
+  return addDays(ymd(y, month, day), 13);
+}
+function nthWeekday(y, m, wd, n) {
+  if (n > 0) { const off = (wd - ymd(y, m, 1).getDay() + 7) % 7; return ymd(y, m, 1 + off + 7 * (n - 1)); }
+  const last = ymd(y, m + 1, 0);
+  return ymd(y, m, last.getDate() - ((last.getDay() - wd + 7) % 7));
+}
+const nextMonday = (d) => addDays(d, (1 - d.getDay() + 7) % 7);
+const usObserved = (d) => (d.getDay() === 6 ? addDays(d, -1) : d.getDay() === 0 ? addDays(d, 1) : d);
+
+const ISLAMIC = {
+  2025: { newYear: [2025, 6, 26], mawlid: [2025, 9, 4], fitr: [2025, 3, 30], adha: [2025, 6, 6] },
+  2026: { newYear: [2026, 6, 16], mawlid: [2026, 8, 25], fitr: [2026, 3, 20], adha: [2026, 5, 27] },
+  2027: { newYear: [2027, 6, 6], mawlid: [2027, 8, 14], fitr: [2027, 3, 10], adha: [2027, 5, 16] },
+  2028: { newYear: [2028, 5, 26], mawlid: [2028, 8, 3], fitr: [2028, 2, 26], adha: [2028, 5, 5] },
+};
+
+const CAL_GEN = {
+  MF: { name: "Monday to Friday, no holidays", weekend: [0, 6], note: "Skips Saturdays and Sundays only.", gen: () => [] },
+  BR: {
+    name: "Brazil national holidays", weekend: [0, 6],
+    note: "Skips Saturdays, Sundays and Brazil's national holidays. Optional days such as Carnival and Corpus Christi are not included. Add them as extra non-working days if they apply.",
+    gen: (y) => {
+      const e = westernEaster(y);
+      const h = [[ymd(y, 1, 1), "New Year's Day"], [addDays(e, -2), "Good Friday"], [ymd(y, 4, 21), "Tiradentes Day"], [ymd(y, 5, 1), "Labour Day"], [ymd(y, 9, 7), "Independence Day"], [ymd(y, 10, 12), "Our Lady of Aparecida"], [ymd(y, 11, 2), "All Souls' Day"], [ymd(y, 11, 15), "Republic Day"], [ymd(y, 12, 25), "Christmas Day"]];
+      if (y >= 2024) h.push([ymd(y, 11, 20), "Black Consciousness Day"]);
+      return h;
+    },
+  },
+  CO: {
+    name: "Colombia public holidays", weekend: [0, 6],
+    note: "Skips Saturdays, Sundays and Colombia's public holidays, including those moved to Monday under the Emiliani law.",
+    gen: (y) => {
+      const e = westernEaster(y);
+      return [[ymd(y, 1, 1), "New Year's Day"], [nextMonday(ymd(y, 1, 6)), "Epiphany"], [nextMonday(ymd(y, 3, 19)), "St Joseph's Day"], [addDays(e, -3), "Holy Thursday"], [addDays(e, -2), "Good Friday"], [ymd(y, 5, 1), "Labour Day"],
+        [nextMonday(addDays(e, 39)), "Ascension"], [nextMonday(addDays(e, 60)), "Corpus Christi"], [nextMonday(addDays(e, 68)), "Sacred Heart"], [nextMonday(ymd(y, 6, 29)), "St Peter and St Paul"], [ymd(y, 7, 20), "Independence Day"], [ymd(y, 8, 7), "Battle of Boyacá"],
+        [nextMonday(ymd(y, 8, 15)), "Assumption"], [nextMonday(ymd(y, 10, 12)), "Columbus Day"], [nextMonday(ymd(y, 11, 1)), "All Saints' Day"], [nextMonday(ymd(y, 11, 11)), "Independence of Cartagena"], [ymd(y, 12, 8), "Immaculate Conception"], [ymd(y, 12, 25), "Christmas Day"]];
+    },
+  },
+  CR: {
+    name: "Costa Rica public holidays", weekend: [0, 6],
+    note: "Skips Saturdays, Sundays and Costa Rica's public holidays on their usual dates. Some holidays are moved in certain years, so check and add or correct dates as extra non-working days.",
+    gen: (y) => {
+      const e = westernEaster(y);
+      const h = [[ymd(y, 1, 1), "New Year's Day"], [addDays(e, -3), "Holy Thursday"], [addDays(e, -2), "Good Friday"], [ymd(y, 4, 11), "Juan Santamaría Day"], [ymd(y, 5, 1), "Labour Day"], [ymd(y, 7, 25), "Annexation of Guanacaste"], [ymd(y, 8, 2), "Our Lady of the Angels"], [ymd(y, 8, 15), "Mother's Day"], [ymd(y, 9, 15), "Independence Day"], [ymd(y, 12, 1), "Abolition of the Army"], [ymd(y, 12, 25), "Christmas Day"]];
+      if (y >= 2021) h.push([ymd(y, 8, 31), "Day of Black Persons and Afro-Costa Rican Culture"]);
+      return h;
+    },
+  },
+  BY: {
+    name: "Belarus public holidays", weekend: [0, 6],
+    note: "Skips Saturdays, Sundays and Belarus's public holidays. Working-day transfers that the government announces each year are not included.",
+    gen: (y) => {
+      const o = orthodoxEaster(y);
+      return [[ymd(y, 1, 1), "New Year's Day"], [ymd(y, 1, 2), "New Year holiday"], [ymd(y, 1, 7), "Orthodox Christmas"], [ymd(y, 3, 8), "Women's Day"], [addDays(o, 9), "Radonitsa"], [ymd(y, 5, 1), "Labour Day"], [ymd(y, 5, 9), "Victory Day"], [ymd(y, 7, 3), "Independence Day"], [ymd(y, 11, 7), "October Revolution Day"], [ymd(y, 12, 25), "Catholic Christmas"]];
+    },
+  },
+  EG: {
+    name: "Egypt public holidays (Friday and Saturday weekend)", weekend: [5, 6],
+    note: "Skips Fridays, Saturdays and Egypt's public holidays. Islamic holidays are approximate and only included for 2025 to 2028, because they depend on moon sighting. Confirm the dates and add corrections as extra non-working days.",
+    gen: (y) => {
+      const o = orthodoxEaster(y);
+      const h = [[ymd(y, 1, 7), "Coptic Christmas"], [ymd(y, 1, 25), "Revolution and Police Day"], [addDays(o, 1), "Sham El-Nessim"], [ymd(y, 4, 25), "Sinai Liberation Day"], [ymd(y, 5, 1), "Labour Day"], [ymd(y, 6, 30), "30 June Revolution"], [ymd(y, 7, 23), "Revolution Day"], [ymd(y, 10, 6), "Armed Forces Day"]];
+      const i = ISLAMIC[y];
+      if (i) {
+        const at = (a) => ymd(a[0], a[1], a[2]);
+        h.push([at(i.newYear), "Islamic New Year (approx.)"], [at(i.mawlid), "Prophet's Birthday (approx.)"]);
+        for (let k = 0; k < 3; k++) h.push([addDays(at(i.fitr), k), "Eid al-Fitr (approx.)"]);
+        for (let k = -1; k < 3; k++) h.push([addDays(at(i.adha), k), "Eid al-Adha (approx.)"]);
+      }
+      return h;
+    },
+  },
+  "US-FED": {
+    name: "United States federal holidays", weekend: [0, 6],
+    note: "Skips Saturdays, Sundays and US federal holidays (a holiday on a Saturday is observed on Friday, and on a Sunday on Monday). Days of national mourning are not included.",
+    gen: (y) => [[usObserved(ymd(y, 1, 1)), "New Year's Day"], [nthWeekday(y, 1, 1, 3), "Martin Luther King Jr. Day"], [nthWeekday(y, 2, 1, 3), "Presidents' Day"], [nthWeekday(y, 5, 1, -1), "Memorial Day"], [usObserved(ymd(y, 6, 19)), "Juneteenth"],
+      [usObserved(ymd(y, 7, 4)), "Independence Day"], [nthWeekday(y, 9, 1, 1), "Labor Day"], [nthWeekday(y, 10, 1, 2), "Columbus Day"], [usObserved(ymd(y, 11, 11)), "Veterans Day"], [nthWeekday(y, 11, 4, 4), "Thanksgiving"], [usObserved(ymd(y, 12, 25)), "Christmas Day"]],
+  },
+};
+const DEFAULT_CAL = { BR: "BR", CO: "CO", CR: "CR", BY: "BY", EG: "EG", "US-SEC": "US-FED" };
+
+const holCache = {};
+function holidayMap(calId, year) {
+  const key = calId + ":" + year;
+  if (!holCache[key]) {
+    const m = new Map();
+    (CAL_GEN[calId] ? CAL_GEN[calId].gen(year) : []).forEach(([d, name]) => { if (!m.has(dkey(d))) m.set(dkey(d), name); });
+    holCache[key] = m;
+  }
+  return holCache[key];
+}
+
+function parseExtraHolidays(text) {
+  const m = new Map();
+  String(text || "").split(/\r?\n/).forEach((line) => {
+    const mm = /^\s*(\d{4})-(\d{2})-(\d{2})\b\s*(.*)$/.exec(line);
+    if (!mm) return;
+    const d = ymd(+mm[1], +mm[2], +mm[3]);
+    if (d.getFullYear() === +mm[1] && d.getMonth() === +mm[2] - 1 && d.getDate() === +mm[3]) m.set(dkey(d), mm[4].trim() || "Non-working day");
+  });
+  return m;
+}
+
+function calOf(j) {
+  const id = j && j.calendar && CAL_GEN[j.calendar] ? j.calendar : (j && DEFAULT_CAL[j.id]) || "MF";
+  return { id, def: CAL_GEN[id], extras: parseExtraHolidays(j && j.extraHolidays) };
+}
+function holidayName(cal, d) {
+  const k = dkey(d);
+  if (cal.extras.has(k)) return cal.extras.get(k);
+  return holidayMap(cal.id, d.getFullYear()).get(k) || null;
+}
+/* Count n business days after `start`, keeping the clock time. Returns the deadline and the holidays skipped on the way. */
+function addBusinessDays(start, n, cal) {
+  const d = new Date(start.getTime());
+  const skipped = [];
+  let left = n;
+  while (left > 0) {
+    d.setDate(d.getDate() + 1);
+    if (cal.def.weekend.includes(d.getDay())) continue;
+    const hn = holidayName(cal, d);
+    if (hn) { skipped.push({ date: new Date(d.getTime()), name: hn }); continue; }
+    left--;
+  }
+  return { date: d, skipped };
 }
 
 (function () {
@@ -1984,6 +2195,7 @@ function fromInputValue(v) {
       ["Legal basis", o.basis],
       ["Rule", ruleText(o, r) + (r.triggerKey === "i" && (o.from || "c") === "c" ? " (conservative setting)" : "")],
       ["Starts from", r.trigger ? fmtDT(r.trigger) : "Not set"],
+      o.timing.endsWith("bd") && r.calName ? ["Business days", r.calName + (r.skipped.length ? ". Skipped: " + r.skipped.map((x) => fmtDate.format(x.date) + " (" + x.name + ")").join(", ") : ". No holidays fall in this period.")] : null,
       o.cond ? ["Conditions", o.cond] : null,
       vol ? ["Volume", thrLabel(o) + ". " + vol] : null,
       j.note ? ["Note", j.note] : null,
@@ -2199,7 +2411,7 @@ function fromInputValue(v) {
     const name = clip(raw.name, 120).trim();
     if (!name || !id) return null;
     const conf = CONF[raw.conf] ? raw.conf : "verify";
-    return {
+    const out = {
       id, name,
       region: REGIONS[raw.region] ? raw.region : "eo",
       law: clip(raw.law, 200).trim() || null,
@@ -2209,6 +2421,10 @@ function fromInputValue(v) {
       reviewedOn: typeof raw.reviewedOn === "string" && DATE_RE.test(raw.reviewedOn) ? raw.reviewedOn : "",
       source: clip(raw.source, 300).trim(),
     };
+    if (typeof raw.calendar === "string" && CAL_GEN[raw.calendar]) out.calendar = raw.calendar;
+    const extra = clip(raw.extraHolidays, 2000).trim();
+    if (extra) out.extraHolidays = extra;
+    return out;
   }
   const baseDef = (id) => cleanDef(BASE_BY_ID[id], id);
 
@@ -2234,7 +2450,7 @@ function fromInputValue(v) {
     rebuildData();
     pickerBuilt = false;
     Array.from(S.sel).forEach((id) => { if (!DATA.byId[id]) S.sel.delete(id); });
-    if (S.view === "rules") { renderRules(); renderHistoryIfVisible(); } else if (S.view === "report") renderReport(); else renderCurrent();
+    if (S.view === "rules") { renderRules(); renderHistoryIfVisible(); renderVerifyIfVisible(); } else if (S.view === "report") renderReport(); else renderCurrent();
   }
 
   const browserDownloader = {
@@ -2254,6 +2470,7 @@ function fromInputValue(v) {
       Store.mode = "local"; Store.dl = browserDownloader; Store.ready = true;
       setHistFromLocal();
       propApplyLocal();
+      asgApplyLocal();
       setOverrides(loadLocal());
       renderHistoryIfVisible();
       renderStoreBadge();
@@ -2274,6 +2491,7 @@ function fromInputValue(v) {
       } catch (e) { /* keep defaults */ }
       histSubscribe(db);
       propSubscribe(db);
+      asgSubscribe(db);
       try {
         db.collection("rules").onSnapshot(
           (snap) => { const map = {}; snap.docs.forEach((d) => { const v = d.data(); if (v) map[d.id] = v; }); Store.ready = true; setOverrides(map); },
@@ -2284,6 +2502,7 @@ function fromInputValue(v) {
       Store.mode = "local"; Store.ready = true;
       setHistFromLocal();
       propApplyLocal();
+      asgApplyLocal();
       setOverrides(loadLocal());
       renderHistoryIfVisible();
     }
@@ -2409,7 +2628,7 @@ function fromInputValue(v) {
   function toDraft(j, isNew) {
     return {
       isNew, id: j.id || "", name: j.name || "", region: j.region || "as", law: j.law || "", conf: j.conf || "verify",
-      note: j.note || "", reviewedOn: j.reviewedOn || "", source: j.source || "",
+      note: j.note || "", reviewedOn: j.reviewedOn || "", source: j.source || "", calendar: j.calendar || "", extraHolidays: j.extraHolidays || "",
       obl: (j.obl || []).map((o) => {
         const t = parseTiming(o.timing);
         return { aud: o.aud, auth: o.auth || "", basis: o.basis || "", kind: t.asap ? "asap" : t.u, n: t.asap ? "" : String(t.n), from: o.from || "c",
@@ -2430,7 +2649,7 @@ function fromInputValue(v) {
   }
   function fromDraft(d) {
     const id = d.isNew ? d.id.trim().toUpperCase() : d.id;
-    return cleanDef({ name: d.name, region: d.region, law: d.law, conf: d.conf, note: d.note, reviewedOn: d.reviewedOn, source: d.source, obl: d.obl.map(oblOf) }, id);
+    return cleanDef({ name: d.name, region: d.region, law: d.law, conf: d.conf, note: d.note, reviewedOn: d.reviewedOn, source: d.source, calendar: d.calendar, extraHolidays: d.extraHolidays, obl: d.obl.map(oblOf) }, id);
   }
   function validate(d) {
     const e = {};
@@ -2441,6 +2660,12 @@ function fromInputValue(v) {
       else if (DATA.byId[id]) e.id = "That code is already in use.";
     }
     if (d.reviewedOn && !DATE_RE.test(d.reviewedOn)) e.reviewedOn = "Use a valid date.";
+    String(d.extraHolidays || "").split(/\r?\n/).forEach((line, n) => {
+      if (!line.trim() || e.extraHolidays) return;
+      const m = /^\s*(\d{4})-(\d{2})-(\d{2})\b/.exec(line);
+      const dt = m && new Date(+m[1], +m[2] - 1, +m[3]);
+      if (!m || dt.getFullYear() !== +m[1] || dt.getMonth() !== +m[2] - 1 || dt.getDate() !== +m[3]) e.extraHolidays = "Line " + (n + 1) + " should start with a real date such as 2026-12-24, then an optional name.";
+    });
     d.obl.forEach((o, i) => {
       if (!o.auth.trim()) e["o" + i + ".auth"] = "Name the authority or recipient.";
       if (o.kind !== "asap") { const n = Number(o.n); if (!(o.n !== "" && Number.isInteger(n) && n >= 1 && n <= 3650)) e["o" + i + ".n"] = "Whole number, 1 to 3650."; }
@@ -2502,6 +2727,8 @@ function fromInputValue(v) {
       fld("Last reviewed", '<input id="ed-reviewedOn" data-f="reviewedOn" type="date" value="' + esc(d.reviewedOn) + '"' + dis() + ">", "reviewedOn") +
       fld("Source link or citation", '<input id="ed-source" data-f="source" type="text" maxlength="300" value="' + esc(d.source) + '" placeholder="URL or citation"' + dis() + ">", "source") +
       '<div class="field wide"><label class="lbl" for="ed-note">Notes for this jurisdiction</label><textarea id="ed-note" data-f="note" rows="2" maxlength="1000"' + dis() + ">" + esc(d.note) + "</textarea></div>" +
+      '<div class="field wide cal-block" id="calBlock" hidden><label class="lbl" for="ed-calendar">Business-day calendar</label><select id="ed-calendar" data-f="calendar"' + dis() + ">" + optHTML(Object.assign({ "": "Default" }, Object.fromEntries(Object.keys(CAL_GEN).map((k) => [k, CAL_GEN[k].name]))), d.calendar) + '</select><span class="hint" id="calNote"></span>' +
+      '<label class="lbl" for="ed-extraHolidays">Extra non-working days <span class="muted">(one per line)</span></label><textarea id="ed-extraHolidays" data-f="extraHolidays" rows="3" maxlength="2000" placeholder="2026-12-24 Company closure" spellcheck="false"' + dis() + ">" + esc(d.extraHolidays) + '</textarea><span class="hint">Add holidays the calendar misses, or correct approximate dates. Each line starts with a date, then an optional name.</span><span class="err" data-err="extraHolidays"></span></div>' +
       '</div></section><section class="ed-sec"><div class="ed-sec-head"><h4>Duties (<span id="edCount">' + d.obl.length + '</span>)</h4>' +
       (ED.ro ? "" : '<button class="btn small" type="button" data-act="add">Add a duty</button>') + '</div><p class="muted">Each duty is one notice: who must be told, how fast, and when it applies. Previews use the dates from step 1' + (S.confirmation ? "." : " (no confirmation date is set, so now is used).") + '</p><ol class="obl-list" id="oblList">' +
       (d.obl.length ? d.obl.map((o, i) => oblCardHTML(o, i, d.obl.length)).join("") : '<li class="muted">No duties. This jurisdiction will show as having no fixed deadline.</li>') + "</ol></section></div>" +
@@ -2521,7 +2748,7 @@ function fromInputValue(v) {
     const pc = Object.assign({}, c, { confirmation: c.confirmation || new Date() });
     const def = cleanObl(oblOf(o));
     if (!def) return "";
-    const r = evaluate({ id: "preview", conf: ED.d.conf }, def, pc);
+    const r = evaluate({ id: ED.d.isNew ? ED.d.id.trim().toUpperCase() : ED.d.id, conf: ED.d.conf, calendar: ED.d.calendar, extraHolidays: ED.d.extraHolidays }, def, pc);
     if (r.status === "waiting") return "Starts when you notify. Set a notification date in step 1 to see it.";
     if (def.timing === "asap") return "No fixed date. Clock starts " + fmtDT(r.trigger) + ".";
     return "Example: due " + fmtDT(r.deadline) + (r.applicability === "pending-law" ? " (not yet in force then)." : ".");
@@ -2547,6 +2774,15 @@ function fromInputValue(v) {
         if (show) bh.innerHTML = 'You changed this duty\u2019s legal basis, but the jurisdiction\u2019s Law or regime is still \u201C' + esc(ED.orig.law) + '\u201D. Lists show the Law or regime. <button type="button" class="btn small" data-act="basis-to-law" data-i="' + i + '">Update Law or regime to match</button>';
       }
     });
+    const calBlock = $("#calBlock");
+    if (calBlock) {
+      const usesBd = d.obl.some((o) => o.kind === "bd");
+      calBlock.hidden = !(usesBd || d.calendar || (d.extraHolidays || "").trim());
+      const defId = DEFAULT_CAL[d.isNew ? d.id.trim().toUpperCase() : d.id] || "MF";
+      const sel = $("#ed-calendar"); if (sel && sel.options[0]) sel.options[0].text = "Default for this jurisdiction (" + CAL_GEN[defId].name + ")";
+      const id = d.calendar && CAL_GEN[d.calendar] ? d.calendar : defId;
+      $("#calNote").textContent = CAL_GEN[id].note;
+    }
     const own = d.obl.filter((o) => o.conf && o.conf !== d.conf);
     d.obl.forEach((o, i) => { const sel = $("#ed-o" + i + "-conf"); if (sel && sel.options[0]) sel.options[0].text = "Same as the jurisdiction (" + CONF[d.conf].tag + ")"; });
     const note = $("#confNote");
@@ -2590,21 +2826,26 @@ function fromInputValue(v) {
     refreshEd();
   }
 
-  function openEditor(id) {
+  function openEditor(id, preset) {
     const isNew = !id;
     const j = isNew ? { region: "as", conf: "verify", obl: [blankObl2()] } : DATA.byId[id];
     if (!j) return;
     ED.d = toDraft(j, isNew);
     ED.orig = isNew ? null : cleanDef(j, j.id);
+    if (preset) {
+      if (preset.conf) ED.d.conf = preset.conf;
+      if (preset.reviewedOn) ED.d.reviewedOn = preset.reviewedOn;
+      ED.d.obl.forEach((o) => { if (o.conf && preset.conf && o.conf !== preset.conf && CONF_RANK[o.conf] < CONF_RANK[preset.conf]) o.conf = ""; });
+    }
     ED.ro = false;
-    ED.openerSel = id ? '[data-edit="' + id + '"]' : "#btnAddRule";
+    ED.openerSel = (preset && preset.opener) || (id ? '[data-edit="' + id + '"]' : "#btnAddRule");
     ED.confirm = null; ED.busy = false;
     $("#editorWrap").hidden = false;
     document.body.classList.add("drawer-open");
     mountEditor();
-    const first = $("#ed-name");
-    if (first) first.focus({ preventScroll: true });
-    $("#editor").scrollTop = 0;
+    const first = $(preset && preset.focus ? preset.focus : "#ed-name");
+    if (first) first.focus({ preventScroll: !preset || !preset.focus });
+    if (!preset || !preset.focus) $("#editor").scrollTop = 0;
   }
   function blankObl2() { return { aud: "reg", auth: "", basis: "", timing: "72h" }; }
 
@@ -2882,7 +3123,7 @@ function fromInputValue(v) {
   }
 
   /* ---------- diff ---------- */
-  const JFIELDS = { name: "Name", region: "Region", law: "Law or regime", conf: "Source check", note: "Notes", reviewedOn: "Last reviewed", source: "Source" };
+  const JFIELDS = { name: "Name", region: "Region", law: "Law or regime", conf: "Source check", note: "Notes", reviewedOn: "Last reviewed", source: "Source", calendar: "Business-day calendar", extraHolidays: "Extra non-working days" };
   const OFIELDS = { aud: "who is told", auth: "authority", basis: "legal basis", timing: "deadline", from: "clock starts from", min: "volume threshold", harm: "applies below threshold if harm likely", eff: "takes effect", vol: "voluntary", conf: "source check", cond: "conditions" };
   const OFDEF = { from: "c", min: null, harm: false, eff: "", vol: false, conf: "", cond: "", basis: "" };
 
@@ -2891,7 +3132,8 @@ function fromInputValue(v) {
     if (v === null || v === undefined || v === "") return "(none)";
     if (k === "region") return REGIONS[v] || v;
     if (k === "conf") return CONF[v] ? CONF[v].tag : v;
-    return "“" + trunc(v, 90) + "”";
+    if (k === "calendar") return CAL_GEN[v] ? CAL_GEN[v].name : v;
+    return "\u201C" + trunc(v, 90) + "\u201D";
   }
   function fmtO(k, v) {
     if (k === "conf" && (v === null || v === undefined || v === "")) return "same as the jurisdiction";
@@ -3010,7 +3252,7 @@ function fromInputValue(v) {
   /* ---------- view ---------- */
   async function resolveNames() {
     if (!Store.user || typeof Store.user.profiles !== "function") return;
-    const all = Hist.list.map((e) => e.by).concat(Prop.list.map((p) => p.author), Object.keys(Prop.reviews).map((k) => Prop.reviews[k].by), Object.keys(Prop.reviews).map((k) => Prop.reviews[k].publishedBy));
+    const all = Hist.list.map((e) => e.by).concat(Prop.list.map((p) => p.author), Object.keys(Prop.reviews).map((k) => Prop.reviews[k].by), Object.keys(Prop.reviews).map((k) => Prop.reviews[k].publishedBy), Object.keys(Ver.asg).map((k) => Ver.asg[k].to));
     const ids = Array.from(new Set(all.filter((i) => /^u_/.test(i || "")))).filter((i) => !(i in Hist.names));
     if (!ids.length) return;
     try {
@@ -3018,6 +3260,7 @@ function fromInputValue(v) {
       ids.forEach((i) => { Hist.names[i] = (ps[i] && ps[i].name) || ""; });
       renderHistoryIfVisible();
       renderProposalsIfVisible();
+      renderVerifyIfVisible();
     } catch (e) { /* names are optional */ }
   }
   function whoLabel(id) {
@@ -3077,10 +3320,12 @@ function fromInputValue(v) {
   function showPane(p) {
     $("#rulesPane").hidden = p !== "rules";
     $("#proposalsPane").hidden = p !== "proposals";
+    $("#verifyPane").hidden = p !== "verify";
     $("#historyPane").hidden = p !== "history";
-    ["rules", "proposals", "history"].forEach((k) => $("#pane" + k[0].toUpperCase() + k.slice(1)).setAttribute("aria-pressed", String(k === p)));
+    ["rules", "proposals", "verify", "history"].forEach((k) => $("#pane" + k[0].toUpperCase() + k.slice(1)).setAttribute("aria-pressed", String(k === p)));
     if (p === "history") renderHistory();
     else if (p === "proposals") renderProposals();
+    else if (p === "verify") renderVerify();
   }
   function showHistoryFor(rid) {
     Hist.rid = rid || "";
@@ -3223,12 +3468,15 @@ function fromInputValue(v) {
     Object.keys(Prop.rmap).forEach((id) => { const r = cleanReview(Prop.rmap[id], id); if (r) rv[id] = r; });
     Prop.reviews = rv;
     Prop.policy = Prop.rawPolicy && typeof Prop.rawPolicy.requireReview === "boolean" ? Prop.rawPolicy.requireReview : null;
+    const rm = Prop.rawPolicy && Number(Prop.rawPolicy.reviewMonths);
+    Prop.reviewMonths = rm >= 1 && rm <= 60 ? Math.floor(rm) : 6;
     if (Prop.openId && !Prop.list.some((p) => p.pid === Prop.openId)) { Prop.openId = null; Prop.sel = null; }
     if (Prop.pendingOpen && Prop.list.some((p) => p.pid === Prop.pendingOpen)) {
       const id = Prop.pendingOpen; Prop.pendingOpen = null;
       showPane("proposals"); openReview(id);
     }
     renderProposalsIfVisible();
+    renderVerifyIfVisible();
     updateEditorGate();
   }
   function propApplyLocal() {
@@ -3270,9 +3518,10 @@ function fromInputValue(v) {
     if (Store.mode === "shared") { await Store.db.collection("reviews").doc(id).delete(); return; }
     const o = propLocalGet(); delete o.reviews[id]; propLocalSave(o); propApplyLocal();
   }
-  async function policySet(v) {
-    if (Store.mode === "shared") { await Store.db.doc("settings/policy").set({ requireReview: v }); return; }
-    const o = propLocalGet(); o.policy = { requireReview: v }; propLocalSave(o); propApplyLocal();
+  async function policySet(patch) {
+    const next = Object.assign({}, Prop.rawPolicy || {}, patch);
+    if (Store.mode === "shared") { await Store.db.doc("settings/policy").set(next); return; }
+    const o = propLocalGet(); o.policy = next; propLocalSave(o); propApplyLocal();
   }
 
   /* ---------- proposing ---------- */
@@ -3724,7 +3973,7 @@ function fromInputValue(v) {
     $("#pFilter").addEventListener("change", (e) => { Prop.filter = e.target.value; renderPropList(); });
     $("#pReqReview").addEventListener("change", async (e) => {
       const v = e.target.checked;
-      try { await policySet(v); flashProp(v ? "Review is now required before rules change." : "Editors can save changes directly."); }
+      try { await policySet({ requireReview: v }); flashProp(v ? "Review is now required before rules change." : "Editors can save changes directly."); }
       catch (err) { e.target.checked = !v; flashProp(errText(err), true); }
     });
     $("#btnImportToProposal").addEventListener("click", () => {
@@ -3821,7 +4070,7 @@ function fromInputValue(v) {
     return "<tr><td class=\"mono nowrap\">" + esc(fmtDT(r.deadline)) + '<div class="muted">' + esc(relText(r)) + "</div></td>" +
       "<td><b>" + esc(r.j.name) + "</b></td>" +
       "<td>" + esc(AUD_SHORT[o.aud]) + '<div class="muted">' + esc(o.auth) + "</div></td>" +
-      "<td>" + esc(ruleText(o, r)) + '<div class="muted">' + esc(o.basis) + "</div>" + (o.cond ? '<div class="muted small-text">' + esc(o.cond) + "</div>" : "") + "</td>" +
+      "<td>" + esc(ruleText(o, r)) + '<div class="muted">' + esc(o.basis) + "</div>" + (r.skipped && r.skipped.length ? '<div class="muted small-text">' + esc(r.calName) + ". Skips " + esc(r.skipped.map((x) => fmtDate.format(x.date) + " (" + x.name + ")").join(", ")) + ".</div>" : o.timing.endsWith("bd") ? '<div class="muted small-text">' + esc(r.calName) + ". No holidays in the period.</div>" : "") + (o.cond ? '<div class="muted small-text">' + esc(o.cond) + "</div>" : "") + "</td>" +
       "<td>" + rpChips(r) + rpPlan(r) + "</td></tr>";
   }
   function rpAsapRow(r) {
@@ -3899,7 +4148,7 @@ function fromInputValue(v) {
       '<section class="rp-sec"><h2>Rules and assumptions</h2><ul>' +
       "<li>" + esc(ruleBits[0]) + "</li><li>" + esc(ruleBits[1]) + "</li></ul>" + editedList +
       (verifyNames.length ? "<p><b>Rules tagged Verify and used above:</b> " + esc(verifyNames.join(", ")) + ". These are recent, ambiguous or thinly sourced.</p>" : "") +
-      "<ul><li>Business days exclude Saturdays and Sundays only. Local public holidays are not applied.</li>" +
+      "<ul><li>Business days follow each jurisdiction's calendar (weekends and public holidays where one is set, otherwise Monday to Friday). The holidays skipped are shown against each deadline.</li>" +
       "<li>Day counts keep the same clock time as the starting point. Times are shown in " + esc(TZ) + ".</li>" +
       "<li>The notification date is treated as the date both regulators and individuals are told.</li>" +
       "<li>Counts are as entered by the user. Harm, risk and materiality tests are listed as conditions for counsel to judge.</li>" +
@@ -3955,6 +4204,214 @@ function fromInputValue(v) {
     $("#btnOpenReport").addEventListener("click", () => { showView("report"); const h = $("#h-report"); h.scrollIntoView({ block: "start" }); h.focus({ preventScroll: true }); });
   }
 
+  /* ==================================================================
+     Verification dashboard: where every rule stands, what to verify next,
+     when a Checked rule is due for another look, and who owns each one.
+     Shared mode keeps assignments in the artifact db ("assignments/<id>");
+     local mode keeps them in this browser.
+  ================================================================== */
+  const SNAP_DATE = "2026-10-04";
+  const LOCAL_ASSIGN_KEY = "breach-clock:assign:v1";
+  const Ver = { group: "todo", region: "", q: "", mine: false, asg: {}, panel: null, shown: [] };
+  let asgMem = null;
+
+  const VGROUPS = [
+    ["todo", "Needs attention"], ["verify-fixed", "Verify: has a fixed deadline"], ["due", "Re-verify"], ["verify-asap", "Verify: no fixed date"],
+    ["established", "Upgrade to Checked"], ["verify-none", "Research: nothing identified"], ["current", "Up to date"], ["all", "All"],
+  ];
+  const VSTATE = {
+    "verify-fixed": { label: "Verify", cls: "st-critical", why: "Has a fixed deadline that has not been checked against a source." },
+    due: { label: "Re-verify due", cls: "st-urgent", why: "The last review is older than the review interval." },
+    soon: { label: "Re-verify soon", cls: "st-urgent", why: "The review interval ends within 30 days." },
+    "verify-asap": { label: "Verify", cls: "st-critical", why: "Requires notice without a fixed date. Confirm whether a fixed window exists." },
+    established: { label: "Established", cls: "st-distant", why: "Settled law that has not been re-checked against current sources." },
+    "verify-none": { label: "Research", cls: "st-critical", why: "No deadline is recorded. Find out whether the jurisdiction has one." },
+    current: { label: "Checked", cls: "st-met", why: "Checked and within the review interval." },
+  };
+  const groupOf = (state) => (state === "soon" ? "due" : state);
+
+  const parseD = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ""); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+  const addMonths = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setMonth(x.getMonth() + n); return x; };
+  const reviewMonths = () => Prop.reviewMonths || 6;
+  const todayKey = () => dkey(new Date());
+
+  function verifyInfo(j) {
+    const eff = effConf(j), cov = coverageOf(j);
+    const last = j.reviewedOn || (eff === "verify" ? "" : SNAP_DATE);
+    let state, due = null;
+    if (eff === "verify") state = cov === "fixed" ? "verify-fixed" : cov === "asap" || cov === "voluntary" ? "verify-asap" : "verify-none";
+    else if (eff === "known") state = "established";
+    else {
+      due = addMonths(parseD(last) || new Date(), reviewMonths());
+      const left = due - new Date();
+      state = left < 0 ? "due" : left < 30 * DAY ? "soon" : "current";
+    }
+    return { j, eff, cov, last, due, state };
+  }
+
+  /* ---------- assignments ---------- */
+  function cleanAssign(raw) {
+    if (!raw || typeof raw !== "object" || typeof raw.to !== "string" || !raw.to.trim()) return null;
+    return { to: clip(raw.to, 100).trim(), at: clip(raw.at, 40), by: clip(raw.by, 80) };
+  }
+  function asgLocalGet() {
+    if (asgMem) return asgMem;
+    try { const r = localStorage.getItem(LOCAL_ASSIGN_KEY); const o = r ? JSON.parse(r) : {}; return o && typeof o === "object" ? o : {}; } catch (e) { return {}; }
+  }
+  function asgLocalSave(o) { try { localStorage.setItem(LOCAL_ASSIGN_KEY, JSON.stringify(o)); asgMem = null; return true; } catch (e) { asgMem = o; Store.volatile = true; return false; } }
+  function asgApplyLocal() {
+    const o = asgLocalGet(), m = {};
+    Object.keys(o).forEach((id) => { const a = cleanAssign(o[id]); if (a && RID_RE.test(id)) m[id] = a; });
+    Ver.asg = m;
+    renderVerifyIfVisible();
+  }
+  function asgSubscribe(db) {
+    try {
+      db.collection("assignments").onSnapshot((snap) => {
+        const m = {};
+        snap.docs.forEach((d) => { const a = cleanAssign(d.data()); if (a && RID_RE.test(d.id)) m[d.id] = a; });
+        Ver.asg = m; resolveNames(); renderVerifyIfVisible();
+      }, () => {});
+    } catch (e) { /* assignments are optional */ }
+  }
+  async function asgSet(rid, to) {
+    const doc = { to: clip(to, 100).trim(), at: new Date().toISOString(), by: Store.userId || "" };
+    if (!doc.to) return;
+    if (Store.mode === "shared") { await Store.db.collection("assignments").doc(rid).set(doc); return; }
+    const o = asgLocalGet(); o[rid] = doc; asgLocalSave(o); asgApplyLocal();
+  }
+  async function asgClear(rid) {
+    if (Store.mode === "shared") { await Store.db.collection("assignments").doc(rid).delete(); return; }
+    const o = asgLocalGet(); delete o[rid]; asgLocalSave(o); asgApplyLocal();
+  }
+  function assigneeLabel(a) { return !a ? "" : /^u_/.test(a.to) ? (a.to === Store.userId ? "you" : Hist.names[a.to] || "a colleague") : a.to; }
+  const isMine = (a) => !!a && (Store.mode === "shared" ? a.to === Store.userId : true);
+
+  /* ---------- render ---------- */
+  function meter(parts, total) {
+    return '<div class="vf-bar" role="img" aria-label="' + esc(parts.map((p) => p.n + " " + p.label).join(", ")) + '">' +
+      parts.filter((p) => p.n).map((p) => '<span class="vf-seg ' + p.cls + '" style="width:' + (total ? (p.n / total) * 100 : 0) + '%" title="' + esc(p.n + " " + p.label) + '"></span>').join("") + "</div>";
+  }
+
+  function vfRowHTML(v) {
+    const j = v.j, a = Ver.asg[j.id], st = VSTATE[v.state];
+    const duties = j.obl.length ? j.obl.slice(0, 4).map(dutyChip).join("") + (j.obl.length > 4 ? '<span class="chip plain">+' + (j.obl.length - 4) + "</span>" : "") : '<span class="muted">No deadline identified</span>';
+    const reviewed = v.state === "current" || v.state === "due" || v.state === "soon" || v.state === "established"
+      ? (j.reviewedOn ? "Reviewed " + j.reviewedOn : "Reviewed at the dataset snapshot (" + SNAP_DATE + ")") + (v.due ? " · re-verify by " + dkey(v.due) : "")
+      : "Not yet reviewed" + (j.reviewedOn ? " (last note " + j.reviewedOn + ")" : "");
+    const asg = a ? '<span class="chip aud" title="Assigned to ' + esc(assigneeLabel(a)) + '">' + esc(assigneeLabel(a)) + "</span>" : '<span class="muted">Unassigned</span>';
+    let panel = "";
+    if (Ver.panel === j.id && Store.canEdit) {
+      panel = Store.mode === "shared"
+        ? '<div class="vf-panel"><span class="actions"><button class="btn small" type="button" data-vact="assign-me" data-id="' + esc(j.id) + '">Assign to me</button><button class="btn small" type="button" data-vact="close-panel">Close</button></span><div class="field"><label class="lbl" for="vfFind">Or find someone</label><input id="vfFind" type="search" autocomplete="off" placeholder="Search by name"><ul class="vf-found" id="vfFound"></ul></div></div>'
+        : '<div class="vf-panel"><div class="field"><label class="lbl" for="vfName">Assign to</label><input id="vfName" type="text" maxlength="100" placeholder="Name" value="' + esc(savedAuthor()) + '"></div><span class="actions"><button class="btn small primary" type="button" data-vact="assign-go" data-id="' + esc(j.id) + '">Assign</button><button class="btn small" type="button" data-vact="close-panel">Close</button></span></div>';
+    }
+    return '<li class="vf-row" data-id="' + esc(j.id) + '"><div class="vf-main"><span class="nm">' + esc(j.name) + (j.id.includes("-") ? "" : '<span class="iso">' + esc(j.id) + "</span>") + '</span><span class="sm">' + esc(j.law || "No dedicated statute recorded") + " · " + esc(REGIONS[j.region]) + "</span></div>" +
+      '<div class="vf-state"><span class="chip ' + st.cls + '" title="' + esc(st.why) + '">' + esc(st.label) + "</span><span class=\"sm\">" + esc(reviewed) + "</span></div>" +
+      '<div class="vf-duties chips">' + duties + "</div>" +
+      '<div class="vf-asg">' + asg + (a && Store.canEdit ? ' <button class="btn small" type="button" data-vact="unassign" data-id="' + esc(j.id) + '">Unassign</button>' : "") + "</div>" +
+      '<div class="vf-act"><button class="btn small primary" type="button" data-vact="verify" data-id="' + esc(j.id) + '">' + (v.state === "current" ? "Review" : "Verify") + "…</button>" + (Store.canEdit && !a ? '<button class="btn small" type="button" data-vact="assign" data-id="' + esc(j.id) + '">Assign…</button>' : "") + "</div>" + panel + "</li>";
+  }
+
+  function renderVerify() {
+    const all = DATA.list.map(verifyInfo);
+    const total = all.length;
+    const c = { checked: 0, established: 0, verify: 0, due: 0, current: 0 };
+    all.forEach((v) => {
+      if (v.eff === "checked") { c.checked++; if (v.state === "current") c.current++; else c.due++; }
+      else if (v.eff === "known") c.established++;
+      else c.verify++;
+    });
+    const pct = (n) => (total ? Math.round((n / total) * 100) : 0);
+    $("#vfTiles").innerHTML =
+      '<div class="tile st-met"><span class="num">' + c.checked + '</span><span class="lab">Checked (' + pct(c.checked) + "%)</span></div>" +
+      '<div class="tile st-urgent' + (c.due ? "" : " zero") + '"><span class="num">' + c.due + '</span><span class="lab">Re-verify due or soon</span></div>' +
+      '<div class="tile st-distant"><span class="num">' + c.established + '</span><span class="lab">Established (' + pct(c.established) + "%)</span></div>" +
+      '<div class="tile st-critical"><span class="num">' + c.verify + '</span><span class="lab">Verify (' + pct(c.verify) + "%)</span></div>";
+    const parts = [{ n: c.current, label: "checked and current", cls: "st-met" }, { n: c.due, label: "checked, re-verify due or soon", cls: "st-urgent" }, { n: c.established, label: "established", cls: "st-distant" }, { n: c.verify, label: "verify", cls: "st-critical" }];
+    $("#vfOverall").innerHTML = meter(parts, total);
+    $("#vfLegend").innerHTML = parts.map((p) => '<li><i class="' + p.cls + '" style="--c:var(--st-' + (p.cls.slice(3) === "critical" ? "critical" : p.cls.slice(3)) + ')"></i>' + esc(p.label) + " <b>" + p.n + "</b></li>").join("");
+
+    $("#vfRegions").innerHTML = '<table class="rp-table"><thead><tr><th>Region</th><th>Jurisdictions</th><th>Checked</th><th>Re-verify</th><th>Established</th><th>Verify</th><th>Progress</th></tr></thead><tbody>' +
+      REGION_ORDER.map((rk) => {
+        const g = all.filter((v) => v.j.region === rk);
+        if (!g.length) return "";
+        const n = { cur: 0, due: 0, est: 0, ver: 0 };
+        g.forEach((v) => { if (v.eff === "checked") { if (v.state === "current") n.cur++; else n.due++; } else if (v.eff === "known") n.est++; else n.ver++; });
+        return "<tr><td><b>" + esc(REGIONS[rk]) + '</b></td><td class="mono">' + g.length + '</td><td class="mono">' + n.cur + '</td><td class="mono">' + n.due + '</td><td class="mono">' + n.est + '</td><td class="mono">' + n.ver + "</td><td>" +
+          meter([{ n: n.cur, label: "checked and current", cls: "st-met" }, { n: n.due, label: "re-verify", cls: "st-urgent" }, { n: n.est, label: "established", cls: "st-distant" }, { n: n.ver, label: "verify", cls: "st-critical" }], g.length) + "</td></tr>";
+      }).join("") + "</tbody></table>";
+
+    const months = $("#vfMonths");
+    if (months !== document.activeElement) months.value = reviewMonths();
+    months.disabled = !Store.canEdit;
+
+    /* worklist */
+    const q = Ver.q.trim().toLowerCase();
+    const filtered = all.filter((v) => (!Ver.region || v.j.region === Ver.region) && (!q || (v.j.name + " " + v.j.id + " " + (v.j.law || "")).toLowerCase().includes(q)) && (!Ver.mine || isMine(Ver.asg[v.j.id])));
+    const inGroup = (v, g) => g === "all" || (g === "todo" ? v.state !== "current" : groupOf(v.state) === g);
+    $("#vfChips").innerHTML = VGROUPS.map(([k, label]) => '<button type="button" class="chip-btn' + (Ver.group === k ? " on" : "") + '" data-vact="group" data-g="' + k + '" aria-pressed="' + (Ver.group === k) + '">' + esc(label) + " (" + filtered.filter((v) => inGroup(v, k)).length + ")</button>").join("");
+    const order = { "verify-fixed": 0, due: 1, soon: 1, "verify-asap": 2, established: 3, "verify-none": 4, current: 5 };
+    const rows = filtered.filter((v) => inGroup(v, Ver.group)).sort((a, b) => order[a.state] - order[b.state] || a.j.name.localeCompare(b.j.name));
+    Ver.shown = rows;
+    $("#vfCount").textContent = rows.length + " of " + total + " jurisdictions shown.";
+    $("#vfList").innerHTML = rows.length ? rows.map(vfRowHTML).join("") : '<li class="muted rule-empty">Nothing here. ' + (Ver.group === "todo" ? "Everything matching these filters is checked and current." : "No jurisdictions match.") + "</li>";
+    $("#btnExportWork").disabled = !rows.length;
+  }
+  function renderVerifyIfVisible() {
+    if (S.view === "rules" && $("#verifyPane") && !$("#verifyPane").hidden) renderVerify();
+  }
+
+  function worklistCsv() {
+    const head = ["Jurisdiction", "Code", "Region", "Status", "Source check", "Last reviewed", "Re-verify by", "Assigned to", "Duties"];
+    const rows = Ver.shown.map((v) => [v.j.name, v.j.id, REGIONS[v.j.region], VSTATE[v.state].label, CONF[v.eff].tag, v.j.reviewedOn || (v.state === "current" || v.state === "due" || v.state === "soon" ? SNAP_DATE + " (snapshot)" : ""), v.due ? dkey(v.due) : "", assigneeLabel(Ver.asg[v.j.id]), summaryOf(v.j)]);
+    return [head].concat(rows).map((r) => r.map(csvCell).join(",")).join("\n");
+  }
+
+  /* ---------- wiring ---------- */
+  function initVerifyUI() {
+    $("#paneVerify").addEventListener("click", () => showPane("verify"));
+    $("#vfRegion").innerHTML = '<option value="">All regions</option>' + REGION_ORDER.map((k) => '<option value="' + k + '">' + esc(REGIONS[k]) + "</option>").join("");
+    $("#vfRegion").addEventListener("change", (e) => { Ver.region = e.target.value; renderVerify(); });
+    $("#vfQ").addEventListener("input", (e) => { Ver.q = e.target.value; renderVerify(); });
+    $("#vfMine").addEventListener("change", (e) => { Ver.mine = e.target.checked; renderVerify(); });
+    $("#vfMonths").addEventListener("change", async (e) => {
+      const n = Math.max(1, Math.min(60, Math.floor(Number(e.target.value)) || 6));
+      e.target.value = n;
+      try { await policySet({ reviewMonths: n }); } catch (err) { e.target.value = reviewMonths(); $("#vfMsg").textContent = errText(err); }
+    });
+    $("#btnExportWork").addEventListener("click", async (e) => {
+      const r = await deliverText("breach-clock-verification-worklist_" + fileStamp() + ".csv", worklistCsv(), e.currentTarget, "#vfCopy");
+      if (r !== "declined") $("#vfMsg").textContent = r === "saved" ? "Worklist saved." : "Worklist copied, or shown below if your browser blocked copying.";
+    });
+
+    $("#verifyPane").addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-vact]");
+      if (!b) return;
+      const act = b.dataset.vact, id = b.dataset.id;
+      if (act === "group") { Ver.group = b.dataset.g; return renderVerify(); }
+      if (act === "verify") { return openEditor(id, { conf: "checked", reviewedOn: todayKey(), focus: "#ed-source", opener: '[data-vact="verify"][data-id="' + id + '"]' }); }
+      if (act === "assign") { Ver.panel = id; renderVerify(); const f = $("#vfFind") || $("#vfName"); if (f) f.focus(); return; }
+      if (act === "close-panel") { Ver.panel = null; return renderVerify(); }
+      try {
+        if (act === "assign-me") { await asgSet(id, Store.userId); Ver.panel = null; }
+        else if (act === "assign-go") { await asgSet(id, $("#vfName").value); authorForNew($("#vfName").value); Ver.panel = null; }
+        else if (act === "assign-pick") { await asgSet(b.dataset.rid, b.dataset.pid); Ver.panel = null; }
+        else if (act === "unassign") await asgClear(id);
+        renderVerify();
+      } catch (err) { $("#vfMsg").textContent = errText(err); }
+    });
+    $("#verifyPane").addEventListener("input", async (e) => {
+      if (e.target.id !== "vfFind") return;
+      const out = $("#vfFound");
+      const rid = Ver.panel;
+      if (!Store.user || typeof Store.user.search !== "function") { out.innerHTML = '<li class="muted">Search is not available here. Use Assign to me.</li>'; return; }
+      let hits = [];
+      try { hits = await Store.user.search(e.target.value); } catch (err) { hits = []; }
+      out.innerHTML = hits.length ? hits.map((p) => '<li><button type="button" class="btn small" data-vact="assign-pick" data-pid="' + esc(p.id) + '" data-rid="' + esc(rid) + '">' + esc(p.name || "Someone") + "</button></li>").join("") : '<li class="muted">No matches.</li>';
+    });
+  }
+
   /* ------------------------------------------------------------------ boot */
   $("#tzName").textContent = TZ;
   rebuildData();
@@ -3963,13 +4420,14 @@ function fromInputValue(v) {
   initRulesUI();
   initHistoryUI();
   initProposalsUI();
+  initVerifyUI();
   initReportUI();
   go(1, false);
   if (typeof STANDALONE !== "undefined" && STANDALONE) {
     $("#noteStore").textContent = "Incident dates and affected counts are never saved or sent anywhere. Edits to the rules are stored in this browser (local storage) and nowhere else. Nothing on this page makes network requests.";
   }
   storeInit();
-  window.__BC = { fileStamp, slugify, S, DATA, Store, Hist, evaluate, evaluateAll, addTime, cleanDef, fromDraft, toDraft, validate, diffDefs, commitRule, merge3, alignDuties, Prop, itemState, fp, mustReview, canDirect, submitProposal, curDef };
+  window.__BC = { Ver, verifyInfo, CAL_GEN, DEFAULT_CAL, holidayMap, calOf, addBusinessDays, westernEaster, orthodoxEaster, dkey, fileStamp, slugify, S, DATA, Store, Hist, evaluate, evaluateAll, addTime, cleanDef, fromDraft, toDraft, validate, diffDefs, commitRule, merge3, alignDuties, Prop, itemState, fp, mustReview, canDirect, submitProposal, curDef };
 })();
 
 </script>
