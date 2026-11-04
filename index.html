@@ -571,10 +571,23 @@ body.drawer-open { overflow: hidden; }
   .pane-switch .pane-btn:nth-child(3) { border-left: 0; }
 }
 
+/* ---------------- toast and decision feedback ---------------- */
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 80; max-width: min(560px, calc(100vw - 32px)); padding: 11px 16px; border-radius: 10px; background: var(--ink); color: var(--bg); font-weight: 600; box-shadow: 0 10px 30px rgb(0 0 0 / 0.3); }
+.toast.err { background: var(--st-late); color: #fff; }
+.btn.on { box-shadow: inset 0 0 0 2px var(--ink); }
+.rv-status { font-size: 14px; }
+.rv-status.ok { border-color: var(--st-met); background: color-mix(in srgb, var(--st-met) 12%, var(--surface)); }
+.rv-status.no { border-color: var(--st-late); background: color-mix(in srgb, var(--st-late) 10%, var(--surface)); }
+.rv-done { display: grid; gap: 8px; }
+.rv-done p { margin: 0; }
+.prop .confirm-box { margin-top: 4px; }
+@media print { .toast { display: none !important; } }
+
 </style>
 </head>
 <body>
 <noscript><p style="padding:16px;font-family:system-ui,sans-serif">Breach Clock needs JavaScript to run. Nothing is sent anywhere.</p></noscript>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <div class="app">
   <header class="masthead">
     <div>
@@ -846,7 +859,14 @@ body.drawer-open { overflow: hidden; }
           <div class="field"><label class="lbl" for="pFilter">Show</label><select id="pFilter"><option value="open">Open proposals</option><option value="done">Finished</option><option value="all">All</option></select></div>
           <button class="btn small" id="btnImportToProposal" type="button">Import a proposal or rules file</button>
         </div>
-        <p id="propCount" class="muted" aria-live="polite"></p>
+        <div class="rules-bar">
+          <span id="propCount" class="muted grow" aria-live="polite"></span>
+          <button class="btn small danger" id="btnClearFinished" type="button" data-pact="clear-finished" hidden>Remove all finished</button>
+        </div>
+        <div id="clearFinishedBox" class="confirm-box" hidden>
+          <p id="clearFinishedText" role="alert"></p>
+          <span class="actions"><button class="btn danger small" type="button" data-pact="clear-yes">Remove them</button><button class="btn small" type="button" data-pact="clear-no">Keep them</button></span>
+        </div>
         <p id="propFlash" class="flash" role="status" hidden></p>
         <ul class="prop-list" id="propItems"></ul>
         <p id="propMsg" class="muted" aria-live="polite"></p>
@@ -1727,6 +1747,15 @@ function addBusinessDays(start, n, cal) {
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const REGION_ORDER = ["eu", "eo", "na", "la", "as", "oc", "me", "af"];
+
+  /* Floating confirmation that survives redraws and is visible wherever the page is scrolled */
+  function toast(text, isErr) {
+    const el = $("#toast");
+    if (!el) return;
+    el.textContent = text; el.classList.toggle("err", !!isErr); el.hidden = false;
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => { el.hidden = true; }, isErr ? 8000 : 5500);
+  }
 
   /* Local date and time for file names, e.g. 2026-10-18_143205 */
   function fileStamp(d) {
@@ -2887,12 +2916,7 @@ function addBusinessDays(start, n, cal) {
       $("#edMsgs").innerHTML = '<p class="msg err">' + esc(errText(e)) + "</p>";
     }
   }
-  function flashRules(text) {
-    const el = $("#rulesFlash");
-    el.textContent = text; el.hidden = false;
-    clearTimeout(flashRules.t);
-    flashRules.t = setTimeout(() => { el.hidden = true; }, 4000);
-  }
+  function flashRules(text) { toast(text); }
 
   function editorClick(e) {
     const b = e.target.closest("[data-act]");
@@ -3375,12 +3399,7 @@ function addBusinessDays(start, n, cal) {
       $("#clearHistBox").hidden = true;
     });
   }
-  function flashHist(text, isErr) {
-    const el = $("#histFlash");
-    el.textContent = text; el.hidden = false; el.classList.toggle("err", !!isErr);
-    clearTimeout(flashHist.t);
-    flashHist.t = setTimeout(() => { el.hidden = true; }, 4500);
-  }
+  function flashHist(text, isErr) { toast(text, isErr); }
 
   /* ==================================================================
      Proposals: stage rule changes, review them one rule at a time with a
@@ -3394,7 +3413,7 @@ function addBusinessDays(start, n, cal) {
   ================================================================== */
   const LOCAL_PROP_KEY = "breach-clock:proposals:v1";
   const AUTHOR_KEY = "breach-clock:author";
-  const Prop = { list: [], reviews: {}, policy: null, pmap: {}, rmap: {}, openId: null, sel: null, choices: {}, note: "", filter: "open", itemFilter: "all", pendingOpen: null, confirm: null, busy: false, form: null };
+  const Prop = { list: [], reviews: {}, policy: null, pmap: {}, rmap: {}, openId: null, sel: null, choices: {}, note: "", filter: "open", itemFilter: "all", pendingOpen: null, confirm: null, listConfirm: null, busy: false, form: null };
   let propMem = null;
 
   function fp(v) {
@@ -3710,14 +3729,27 @@ function addBusinessDays(start, n, cal) {
       '<div class="chips">' + chips + (conflicts ? '<span class="chip verify">' + conflicts + (conflicts === 1 ? " conflict" : " conflicts") + "</span>" : "") + "</div>" +
       '<div class="h-act"><button class="btn small primary" type="button" data-pact="review" data-pid="' + esc(p.pid) + '">Review</button>' +
       '<button class="btn small" type="button" data-pact="export" data-pid="' + esc(p.pid) + '">Export file</button>' +
-      (mine || Store.canEdit ? '<button class="btn small danger" type="button" data-pact="delete" data-pid="' + esc(p.pid) + '">' + (propIsOpen(p) ? "Withdraw" : "Delete") + "</button>" : "") + "</div></li>";
+      (mine || Store.canEdit ? '<button class="btn small danger" type="button" data-pact="delete" data-pid="' + esc(p.pid) + '">' + (propIsOpen(p) ? "Withdraw" : "Remove") + "</button>" : "") + "</div>" +
+      (Prop.listConfirm === p.pid ? '<div class="confirm-box"><p role="alert"><b>' + (propIsOpen(p) ? "Withdraw" : "Remove") + " this proposal?</b> Its decisions are deleted too. Published changes stay in the live rules.</p>" + '<span class="actions"><button class="btn danger small" type="button" data-pact="delete-yes" data-pid="' + esc(p.pid) + '">' + (propIsOpen(p) ? "Withdraw" : "Remove") + '</button><button class="btn small" type="button" data-pact="delete-no">Keep it</button></span></div>' : "") + "</li>";
   }
   function renderPropList() {
     const f = Prop.filter;
     const list = Prop.list.filter((p) => (f === "all" ? true : f === "open" ? propIsOpen(p) : !propIsOpen(p)));
     const nOpen = Prop.list.filter(propIsOpen).length;
-    $("#propCount").textContent = Prop.list.length ? "Showing " + list.length + " of " + Prop.list.length + " proposal" + (Prop.list.length === 1 ? "" : "s") + " (" + nOpen + " open)." : "";
-    $("#propItems").innerHTML = list.length ? list.map(propCard).join("") : '<li class="muted rule-empty">' + (Prop.list.length ? "No proposals match this filter." : "No proposals yet. Use Edit on any rule, or import a file, to propose a change.") + "</li>";
+    const finished = Prop.list.filter((p) => !propIsOpen(p));
+    $("#propCount").textContent = Prop.list.length ? "Showing " + list.length + " of " + Prop.list.length + " proposal" + (Prop.list.length === 1 ? "" : "s") + " (" + nOpen + " open, " + finished.length + " finished)." : "";
+    let empty;
+    if (!Prop.list.length) empty = "No proposals yet. Use Edit on any rule, or import a file, to propose a change.";
+    else if (f === "open" && finished.length) empty = 'No open proposals. ' + finished.length + " finished (rejected or published) " + (finished.length === 1 ? "is" : "are") + ' under <button class="btn small" type="button" data-pact="show-finished">Finished</button>';
+    else empty = "No proposals match this filter.";
+    $("#propItems").innerHTML = list.length ? list.map(propCard).join("") : '<li class="muted rule-empty">' + empty + "</li>";
+    const nRej = finished.filter((p) => p.items.every((it) => itemState(p, it) === "rejected")).length;
+    const bulk = $("#btnClearFinished");
+    bulk.hidden = !(Store.canEdit && finished.length);
+    bulk.textContent = "Remove all finished (" + finished.length + ")";
+    const box = $("#clearFinishedBox");
+    box.hidden = Prop.listConfirm !== "bulk" || !finished.length;
+    $("#clearFinishedText").textContent = "Remove " + finished.length + " finished proposal" + (finished.length === 1 ? "" : "s") + " (" + nRej + " fully rejected, " + (finished.length - nRej) + " published or mixed)? Published changes stay in the live rules and the history.";
   }
   function renderPolicy() {
     const el = $("#pReqReview");
@@ -3800,17 +3832,23 @@ function addBusinessDays(start, n, cal) {
     if (st === "published") banner = '<p class="msg">Published ' + esc(when(rv.publishedAt)) + " by " + esc(whoLabel(rv.publishedBy) || "an editor") + ".</p>";
     else if (st === "stale") banner = '<p class="msg warn">This rule changed after you accepted it, so the acceptance no longer applies. Review it again.</p>';
     else if (st === "voided") banner = '<p class="msg warn">This proposal was edited after it was reviewed, so the earlier decision was cleared.</p>';
-    else if (st === "approved") banner = '<p class="msg">Accepted by ' + esc(whoLabel(rv.by) || "an editor") + " " + esc(when(rv.at)) + ". It is not live until published.</p>";
-    else if (st === "rejected") banner = '<p class="msg">Rejected by ' + esc(whoLabel(rv.by) || "an editor") + " " + esc(when(rv.at)) + ".</p>";
+    const decision = st === "approved" ? '<p class="msg rv-status ok" id="rvStatus" role="status"><b>\u2713 Accepted</b> by ' + esc(whoLabel(rv.by) || "an editor") + " " + esc(when(rv.at)) + ". It is not live until you publish.</p>"
+      : st === "rejected" ? '<p class="msg rv-status no" id="rvStatus" role="status"><b>\u2717 Rejected</b> by ' + esc(whoLabel(rv.by) || "an editor") + " " + esc(when(rv.at)) + ". This change will not be applied. The live rule stays as it is.</p>" : "";
     const state = !m.clean
       ? (m.conflicts.length ? '<p class="msg warn"><b>Conflict.</b> This rule changed after the proposal was drafted. Compare the three versions and choose a result for each conflicting row.</p>' : '<p class="msg">This rule changed after the proposal was drafted, but the changes do not overlap. They merge cleanly.</p>')
       : '<p class="muted">No one has changed this rule since the proposal was drafted.</p>';
 
+    const removeBox = Prop.confirm === "remove" ? '<div class="confirm-box rv-publish"><p role="alert"><b>' + (nTodo + nAcc ? "Withdraw" : "Remove") + " this proposal?</b> The proposal and its decisions are deleted. Changes already published stay in the live rules and the history.</p>" + '<span class="actions"><button class="btn danger small" type="button" data-pact="remove-yes"' + (Prop.busy ? " disabled" : "") + ">" + (nTodo + nAcc ? "Withdraw" : "Remove") + '</button><button class="btn small" type="button" data-pact="remove-no">Keep it</button></span></div>' : "";
+    const doneAll = nTodo === 0 && nAcc + nRej + nPub > 0;
+    const canRemove = Store.canEdit || (Store.mode === "shared" ? p.author === Store.userId : true);
+    const doneBlock = !doneAll ? "" : nAcc
+      ? '<div class="msg rv-done" id="rvDone"><p><b>All ' + p.items.length + " reviewed:</b> " + (nAcc + nPub) + " accepted, " + nRej + " rejected. Publish the accepted changes when you are ready.</p>" + (editable ? '<span class="actions"><button class="btn primary small" type="button" data-pact="publish">Publish ' + nAcc + " accepted</button></span>" : "") + "</div>"
+      : '<div class="msg rv-done" id="rvDone"><p><b>All ' + p.items.length + " reviewed" + (nPub ? "" : ", none accepted") + ".</b> " + (nPub ? "Everything in this proposal is finished." : "Nothing will change in the live rules.") + ' This proposal is now under <b>Finished</b>.</p><span class="actions">' + (canRemove ? '<button class="btn small danger" type="button" data-pact="remove">Remove this proposal</button>' : "") + '<button class="btn small" type="button" data-pact="back">Back to all proposals</button></span></div>';
     const canAct = editable && st !== "published";
     const decided = st === "approved" || st === "rejected";
     const detail = '<p class="eyebrow">Change ' + (idx + 1) + " of " + p.items.length + "</p><h4>" + esc(it.name) + (it.rid.includes("-") ? "" : '<span class="iso"> ' + esc(it.rid) + "</span>") + ' <span class="chip plain">' + itemKind(it) + "</span></h4>" + banner + state + tableHTML(m, canAct) + '<div class="rv-result" id="rvResult"></div>' +
       '<div class="field"><label class="lbl" for="rvNote">Reviewer note</label><textarea id="rvNote" rows="2" maxlength="1000"' + (canAct ? "" : " disabled") + ">" + esc(Prop.note) + "</textarea></div>" +
-      '<div class="actions rv-actions">' + (canAct ? '<button class="btn primary" type="button" data-pact="approve" id="rvApprove">Accept this change</button><button class="btn" type="button" data-pact="reject" id="rvReject">Reject this change</button>' + (decided || st === "stale" ? '<button class="btn" type="button" data-pact="clear">Clear decision</button>' : "") : "") +
+      decision + doneBlock + '<div class="actions rv-actions">' + (canAct ? '<button class="btn primary' + (st === "approved" ? " on" : "") + '" type="button" data-pact="approve" id="rvApprove" aria-pressed="' + (st === "approved") + '">' + (st === "approved" ? "\u2713 Accepted" : "Accept this change") + '</button><button class="btn' + (st === "rejected" ? " on" : "") + '" type="button" data-pact="reject" id="rvReject" aria-pressed="' + (st === "rejected") + '">' + (st === "rejected" ? "\u2717 Rejected" : "Reject this change") + '</button>' + (decided || st === "stale" ? '<button class="btn" type="button" data-pact="clear">Clear decision</button>' : "") : "") +
       '<span class="rv-nav"><button class="btn" type="button" data-pact="prev" aria-label="Previous change">← Previous</button><button class="btn" type="button" data-pact="next" aria-label="Next change">Next →</button>' + (nTodo ? '<button class="btn" type="button" data-pact="next-todo">Next to review</button>' : "") + "</span></div>" +
       '<p class="muted">Accepting or rejecting does not change the live rules. Only publishing does.' + (canAct ? " Keys: A accept, R reject, ← → move." : "") + "</p>";
 
@@ -3820,11 +3858,11 @@ function addBusinessDays(start, n, cal) {
       publish = '<div class="confirm-box rv-publish"><div><p role="alert"><b>Publish ' + nAcc + " accepted change" + (nAcc === 1 ? "" : "s") + " to the live rules?</b></p><ul>" + rows + '</ul></div><span class="actions"><button class="btn primary" type="button" data-pact="publish-yes"' + (Prop.busy ? " disabled" : "") + '>Publish now</button><button class="btn" type="button" data-pact="publish-no">Not yet</button></span></div>';
     }
     const done = nTodo === 0 && nAcc + nRej + nPub > 0;
-    const finished = done ? '<p class="msg rv-done">All ' + p.items.length + " change" + (p.items.length === 1 ? "" : "s") + " reviewed: " + (nAcc + nPub) + " accepted, " + nRej + " rejected." + (nAcc ? " Publish the accepted changes when you are ready." : "") + "</p>" : "";
+    const finished = false ? '<p class="msg rv-done">All ' + p.items.length + " change" + (p.items.length === 1 ? "" : "s") + " reviewed: " + (nAcc + nPub) + " accepted, " + nRej + " rejected." + (nAcc ? " Publish the accepted changes when you are ready." : "") + "</p>" : "";
     const bar = '<div class="rv-bar"><span class="chips"><span class="chip plain">' + nTodo + ' to review</span><span class="chip aud">' + nAcc + ' accepted</span><span class="chip plain">' + nRej + ' rejected</span><span class="chip plain">' + nPub + " published</span></span>" +
       (editable ? '<button class="btn primary small" type="button" data-pact="publish"' + (nAcc ? "" : " disabled") + ">Publish " + nAcc + " accepted</button>" : '<span class="muted">Only editors can accept, reject and publish.</span>') + "</div>";
 
-    $("#propReview").innerHTML = '<div class="rv"><div class="rv-head"><button class="btn small" type="button" data-pact="back">← All proposals</button><h3>' + esc(p.title) + '</h3><p class="muted">by ' + esc(authorLabel(p)) + " · " + esc(when(p.createdAt)) + "</p>" + (p.description ? "<p>" + esc(p.description) + "</p>" : "") + finished + bar + publish +
+    $("#propReview").innerHTML = '<div class="rv"><div class="rv-head"><span class="actions"><button class="btn small" type="button" data-pact="back">← All proposals</button>' + (canRemove ? '<button class="btn small danger" type="button" data-pact="remove">' + (nTodo + nAcc ? "Withdraw proposal" : "Remove proposal") + "</button>" : "") + "</span>" + removeBox + '<h3>' + esc(p.title) + '</h3><p class="muted">by ' + esc(authorLabel(p)) + " · " + esc(when(p.createdAt)) + "</p>" + (p.description ? "<p>" + esc(p.description) + "</p>" : "") + finished + bar + publish +
       '<p id="rvFlash" class="flash" role="status" hidden></p></div><div class="rv-body"><div class="rv-side"><div class="rv-filters" role="group" aria-label="Show">' + filters + '</div><ol class="rv-items" aria-label="Changes in this proposal">' + list + '</ol></div><div class="rv-detail">' + detail + "</div></div></div>";
     refreshReviewDynamic();
   }
@@ -3859,13 +3897,7 @@ function addBusinessDays(start, n, cal) {
     const el = $('.rv-item.on'); if (el) el.scrollIntoView({ block: "nearest" });
   }
 
-  function flashProp(text, isErr) {
-    const el = $("#rvFlash") || $("#propFlash");
-    if (!el) return;
-    el.textContent = text; el.hidden = false; el.classList.toggle("err", !!isErr);
-    clearTimeout(flashProp.t);
-    flashProp.t = setTimeout(() => { el.hidden = true; }, 5000);
-  }
+  function flashProp(text, isErr) { toast(text, isErr); }
 
   async function decide(status) {
     const p = Prop.list.find((x) => x.pid === Prop.openId);
@@ -3885,8 +3917,11 @@ function addBusinessDays(start, n, cal) {
       const nxt = p.items.find((x) => x.rid !== it.rid && isOpenState(itemState(p, x)) && itemState(p, x) !== "approved");
       if (nxt) selectItem(nxt.rid);
       renderProposals();
-      flashProp(status === "approved" ? "Accepted. It goes live when you publish." : "Rejected.");
-    } catch (e) { Prop.busy = false; renderProposals(); flashProp(errText(e), true); }
+      const left = p.items.filter((x) => TODO(itemState(p, x))).length;
+      toast((status === "approved" ? "Accepted " + it.name + ". It goes live when you publish." : "Rejected " + it.name + ". The live rule is unchanged.") + (left === 0 && !p.items.some((x) => itemState(p, x) === "approved") ? " This proposal is finished." : ""));
+      const target = nxt ? $(".rv-detail") : $("#rvDone") || $("#rvStatus");
+      if (target) target.scrollIntoView({ block: nxt ? "start" : "nearest" });
+    } catch (e) { Prop.busy = false; renderProposals(); toast(errText(e), true); }
   }
   async function publishApproved() {
     const p = Prop.list.find((x) => x.pid === Prop.openId);
@@ -3995,10 +4030,31 @@ function addBusinessDays(start, n, cal) {
         if (r !== "declined") $("#propMsg").textContent = r === "saved" ? "Proposal file saved." : "Proposal file copied, or shown below if your browser blocked copying.";
         return;
       }
-      if (act === "delete") {
+      if (act === "delete") { Prop.listConfirm = b.dataset.pid; return renderPropList(); }
+      if (act === "delete-no") { Prop.listConfirm = null; return renderPropList(); }
+      if (act === "delete-yes") {
         const p = Prop.list.find((x) => x.pid === b.dataset.pid); if (!p) return;
-        if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Confirm " + (propIsOpen(p) ? "withdraw" : "delete"); setTimeout(() => { if (b.isConnected) { b.dataset.armed = ""; b.textContent = propIsOpen(p) ? "Withdraw" : "Delete"; } }, 4000); return; }
-        try { await propDelete(p.pid); flashProp("Proposal removed."); } catch (err) { flashProp(errText(err), true); }
+        try { await propDelete(p.pid); Prop.listConfirm = null; toast("Proposal removed: " + p.title); } catch (err) { toast(errText(err), true); }
+        return;
+      }
+      if (act === "show-finished") { Prop.filter = "done"; $("#pFilter").value = "done"; return renderPropList(); }
+      if (act === "clear-finished") { Prop.listConfirm = "bulk"; return renderPropList(); }
+      if (act === "clear-no") { Prop.listConfirm = null; return renderPropList(); }
+      if (act === "clear-yes") {
+        const gone = Prop.list.filter((x) => !propIsOpen(x));
+        let n = 0, fail = null;
+        for (const x of gone) { try { await propDelete(x.pid); n++; } catch (err) { fail = err; break; } }
+        Prop.listConfirm = null;
+        toast(fail ? "Removed " + n + " of " + gone.length + ", then it stopped: " + errText(fail) : "Removed " + n + " finished proposal" + (n === 1 ? "" : "s") + ".", !!fail);
+        return renderPropList();
+      }
+      if (act === "remove") { Prop.confirm = "remove"; return renderReview(); }
+      if (act === "remove-no") { Prop.confirm = null; return renderReview(); }
+      if (act === "remove-yes") {
+        const p = Prop.list.find((x) => x.pid === Prop.openId); if (!p) return;
+        Prop.busy = true;
+        try { await propDelete(p.pid); Prop.busy = false; toast("Proposal removed: " + p.title); showProposalList(); }
+        catch (err) { Prop.busy = false; toast(errText(err), true); renderReview(); }
         return;
       }
       if (act === "select") { selectItem(b.dataset.rid); return renderReview(); }
